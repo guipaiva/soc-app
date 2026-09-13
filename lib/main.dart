@@ -51,8 +51,9 @@ class IncidenteCard extends StatelessWidget{
             Row(children: [Text('${incidente.identificador} · ${incidente.tipo}')]),
             Row(children: [Text('${incidente.severidade} · ${incidente.status}')]),
             Row(children: [
-              Text('${incidente.getResponsavel()}', textAlign: TextAlign.start,), 
-              Text('${incidente.tempoDeCriacao}', textAlign: TextAlign.end,)
+              Text('${incidente.getResponsavel()}'),
+              Spacer(),
+              Text('${incidente.tempoDeCriacao}')
             ]),
           ]
         ),
