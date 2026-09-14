@@ -21,11 +21,12 @@ class Incidente {
   String getResponsavel() => this.responsavel ?? 'Sem responsável';
 
   String get tempoDeCriacao {
-    //A data de abertura é guardada como DateTime; 
-    //a diferença até agora (DateTime.now()) é um Duration, 
-    //que sabe se converter em minutos, horas ou dias. 
-    //Qual unidade mostrar depende do tamanho da diferença.
-    return 'há 1 min';
+    final diferenca = DateTime.now().difference(data_criacao);
+    if(diferenca.inDays > 0)
+      return 'há ${diferenca.inDays} dias';
+    else if(diferenca.inHours > 0)
+      return 'há ${diferenca.inHours}h';
+    return 'há ${diferenca.inMinutes}min';
   }
 }
 
