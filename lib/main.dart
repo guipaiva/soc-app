@@ -32,19 +32,31 @@ class Incidente {
 
 class IncidenteCard extends StatelessWidget{
   final Incidente incidente;
-  final IconData icone;
+  IconData? icone;
 
   IncidenteCard({
     super.key,
-    required this.incidente, 
-    required this.icone
-  });
+    required this.incidente,
+  }){
+    switch(this.incidente.severidade){
+      case 'crítico':
+        this.icone = Icons.local_fire_department;
+      case 'alto':
+        this.icone = Icons.warning;
+      case 'médio':
+        this.icone = Icons.alarm_add_outlined;
+      case 'baixo':
+        this.icone = Icons.air_sharp;
+      default:
+        this.icone = Icons.ads_click_sharp;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: EdgeInsets.all(12),
+        padding: EdgeInsets.all(15),
         child: Column(
           children: [
             Row(children: [Icon(icone), Text(' ${incidente.titulo}')]),
@@ -129,12 +141,12 @@ class CentralIncidentesApp extends StatelessWidget {
         ),
         backgroundColor: Colors.blue,
         body: Column(children: [
-          IncidenteCard(incidente: incidenteTeste, icone: Icons.local_fire_department),
-          IncidenteCard(incidente: incidenteTeste2, icone: Icons.local_fire_department),
-          IncidenteCard(incidente: incidenteTeste3, icone: Icons.local_fire_department),
-          IncidenteCard(incidente: incidenteTeste4, icone: Icons.local_fire_department),
-          IncidenteCard(incidente: incidenteTeste5, icone: Icons.local_fire_department),
-          IncidenteCard(incidente: incidenteTeste6, icone: Icons.local_fire_department),
+          IncidenteCard(incidente: incidenteTeste),
+          IncidenteCard(incidente: incidenteTeste2),
+          IncidenteCard(incidente: incidenteTeste3),
+          IncidenteCard(incidente: incidenteTeste4),
+          IncidenteCard(incidente: incidenteTeste5),
+          IncidenteCard(incidente: incidenteTeste6),
           ]),
       ),
     );
