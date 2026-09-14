@@ -34,23 +34,24 @@ class Incidente {
 
 class IncidenteCard extends StatelessWidget{
   final Incidente incidente;
-  IconData? icone;
 
   IncidenteCard({
     super.key,
     required this.incidente,
-  }){
+  });
+
+  IconData get icone {
     switch(incidente.severidade){
       case 'crítico':
-        icone = Icons.local_fire_department;
+        return Icons.local_fire_department;
       case 'alto':
-        icone = Icons.warning;
+        return Icons.warning;
       case 'médio':
-        icone = Icons.alarm_add_outlined;
+        return Icons.alarm_add_outlined;
       case 'baixo':
-        icone = Icons.air_sharp;
+        return Icons.air_sharp;
       default:
-        icone = Icons.ads_click_sharp;
+        return Icons.ads_click_sharp;
     }
   }
 
