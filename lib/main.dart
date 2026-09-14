@@ -148,17 +148,17 @@ class CentralIncidentesApp extends StatelessWidget {
           padding: const EdgeInsets.all(8),
           children: incidentesConhecidos.entries.map((entry) {
             final ident = entry.key;
-            final i_objeto = entry.value as Map<String, Object?>;
+            final incidenteObject = entry.value as Map<String, Object?>;
 
             return IncidenteCard(
               incidente: Incidente(
                 identificador: ident,
-                tipo: i_objeto['tipo'] as String,
-                titulo: i_objeto['titulo'] as String,
-                severidade: i_objeto['severidade'] as String,
-                status: i_objeto['status'] as String,
-                responsavel: i_objeto['responsavel'] as String?,
-                dataCriacao: i_objeto['dataCriacao'] as DateTime,
+                tipo: incidenteObject['tipo'] as String,
+                titulo: incidenteObject['titulo'] as String,
+                severidade: incidenteObject['severidade'] as String,
+                status: incidenteObject['status'] as String,
+                responsavel: incidenteObject['responsavel'] as String?,
+                dataCriacao: incidenteObject['dataCriacao'] as DateTime,
               ),
             );
           }).toList(),
