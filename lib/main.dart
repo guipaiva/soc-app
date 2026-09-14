@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 class Incidente {
   final String identificador; //INC-1042
   final String tipo; //phishing, malware, acesso não autorizado, DDoS, outro
@@ -88,7 +87,7 @@ Incidente incidenteTeste2 = Incidente(
     titulo: 'Malware no PC do Jhonathan',
     severidade: 'baixo',
     status: 'aberto',
-    // responsavel: 'Mateus'
+    // responsavel: 'Sem responsável'
 );
 Incidente incidenteTeste3 = Incidente(
     identificador: 'INC-44',
@@ -140,7 +139,9 @@ class CentralIncidentesApp extends StatelessWidget {
           centerTitle: true
         ),
         backgroundColor: Colors.blue,
-        body: Column(children: [
+        body: ListView(
+          padding: const EdgeInsets.all(8),
+          children:[
           IncidenteCard(incidente: incidenteTeste),
           IncidenteCard(incidente: incidenteTeste2),
           IncidenteCard(incidente: incidenteTeste3),
