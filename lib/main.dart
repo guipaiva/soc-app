@@ -6,7 +6,7 @@ class Incidente {
   final String titulo;
   final String severidade; //crítico, alto, médio, baixo
   final String status; //aberto, em andamento, resolvido
-  final DateTime data_criacao = DateTime.now();
+  final DateTime data_criacao;
   final String? responsavel;
 
   Incidente({
@@ -16,6 +16,7 @@ class Incidente {
     required this.severidade,
     this.status = 'aberto',
     this.responsavel,
+    required this.data_criacao,
   });
 
   String getResponsavel() => this.responsavel ?? 'Sem responsável';
@@ -80,13 +81,15 @@ Map<String, Object> incidentesConhecidos = {
       'titulo': 'DDOS NA CENTRAL',
       'severidade': 'crítico',
       'status': 'aberto',
-      'responsavel': 'Lucas'
+      'responsavel': 'Lucas',
+      'data_criacao':  DateTime(2026, 9, 11, 22, 4)
   },
   "INC-43": {
       'tipo': 'Malware',
       'titulo': 'Malware no PC do Jhonathan',
       'severidade': 'baixo',
       'status': 'aberto',
+      'data_criacao':  DateTime(2026, 9, 1, 14, 0)
       // responsavel: 'Sem responsável'
   },
   "INC-44": {
@@ -94,28 +97,32 @@ Map<String, Object> incidentesConhecidos = {
       'titulo': 'Phishing de Login',
       'severidade': 'alto',
       'status': 'resolvido',
-      'responsavel': 'Mateus'
+      'responsavel': 'Mateus',
+      'data_criacao':  DateTime(2026, 9, 13, 22, 5)
   },
   "INC-45": {
       'tipo': 'Acesso não autorizado',
       'titulo': 'Acesso ao Dash de conta sem privilégio',
       'severidade': 'médio',
       'status': 'em andamento',
-      'responsavel': 'João da Silva'
+      'responsavel': 'João da Silva',
+      'data_criacao':  DateTime(2026, 9, 10, 10, 0)
   },
   "INC-46": {
       'tipo': 'Outro',
       'titulo': 'Provável sniffer na rede',
       'severidade': 'alto',
       'status': 'aberto',
-      'responsavel': 'Luana'
+      'responsavel': 'Luana',
+      'data_criacao':  DateTime(2026, 9, 13, 23, 0)
   },
   "INC-47": {
       'tipo': 'SQL Injection',
       'titulo': 'Vulnerabilidade no ambiente de testes',
       'severidade': 'baixo',
       'status': 'resolvido',
-      'responsavel': 'Juliano'
+      'responsavel': 'Juliano',
+      'data_criacao':  DateTime(2026, 9, 2, 15, 15)
   }
 };
 
@@ -150,6 +157,7 @@ class CentralIncidentesApp extends StatelessWidget {
                 severidade: i_objeto['severidade'] as String,
                 status: i_objeto['status'] as String,
                 responsavel: i_objeto['responsavel'] as String?,
+                data_criacao: i_objeto['data_criacao'] as DateTime,
               ),
             );
           }).toList(),
