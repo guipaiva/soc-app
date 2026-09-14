@@ -19,14 +19,15 @@ class Incidente {
     required this.dataCriacao,
   });
 
-  String getResponsavel() => this.responsavel ?? 'Sem responsável';
+  String getResponsavel() => responsavel ?? 'Sem responsável';
 
   String get tempoDeCriacao {
     final diferenca = DateTime.now().difference(dataCriacao);
-    if(diferenca.inDays > 0)
+    if(diferenca.inDays > 0){
       return 'há ${diferenca.inDays} dias';
-    else if(diferenca.inHours > 0)
+    }else if(diferenca.inHours > 0){
       return 'há ${diferenca.inHours}h';
+    }
     return 'há ${diferenca.inMinutes}min';
   }
 }
