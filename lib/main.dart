@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:core';
 
 class Incidente {
   final String identificador; //INC-1042
@@ -73,54 +74,50 @@ class IncidenteCard extends StatelessWidget{
   }
 }
 
-Incidente incidenteTeste = Incidente(
-    identificador: 'INC-42',
-    tipo: 'DDOS',
-    titulo: 'DDOS NA CENTRAL',
-    severidade: 'crítico',
-    status: 'aberto',
-    responsavel: 'Lucas'
-);
-Incidente incidenteTeste2 = Incidente(
-    identificador: 'INC-43',
-    tipo: 'Malware',
-    titulo: 'Malware no PC do Jhonathan',
-    severidade: 'baixo',
-    status: 'aberto',
-    // responsavel: 'Sem responsável'
-);
-Incidente incidenteTeste3 = Incidente(
-    identificador: 'INC-44',
-    tipo: 'Phishing',
-    titulo: 'Phishing de Login',
-    severidade: 'alto',
-    status: 'resolvido',
-    responsavel: 'Mateus'
-);
-Incidente incidenteTeste4 = Incidente(
-    identificador: 'INC-45',
-    tipo: 'Acesso não autorizado',
-    titulo: 'Acesso ao Dash de conta sem privilégio',
-    severidade: 'médio',
-    status: 'em andamento',
-    responsavel: 'João da Silva'
-);
-Incidente incidenteTeste5 = Incidente(
-    identificador: 'INC-46',
-    tipo: 'Outro',
-    titulo: 'Provável sniffer na rede',
-    severidade: 'alto',
-    status: 'aberto',
-    responsavel: 'Luana'
-);
-Incidente incidenteTeste6 = Incidente(
-    identificador: 'INC-47',
-    tipo: 'SQL Injection',
-    titulo: 'Vulnerabilidade no ambiente de testes',
-    severidade: 'baixo',
-    status: 'resolvido',
-    responsavel: 'Juliano'
-);
+Map<String, Object> incidentesConhecidos = {
+  "INC-42": {
+      'tipo': 'DDOS',
+      'titulo': 'DDOS NA CENTRAL',
+      'severidade': 'crítico',
+      'status': 'aberto',
+      'responsavel': 'Lucas'
+  },
+  "INC-43": {
+      'tipo': 'Malware',
+      'titulo': 'Malware no PC do Jhonathan',
+      'severidade': 'baixo',
+      'status': 'aberto',
+      // responsavel: 'Sem responsável'
+  },
+  "INC-44": {
+      'tipo': 'Phishing',
+      'titulo': 'Phishing de Login',
+      'severidade': 'alto',
+      'status': 'resolvido',
+      'responsavel': 'Mateus'
+  },
+  "INC-45": {
+      'tipo': 'Acesso não autorizado',
+      'titulo': 'Acesso ao Dash de conta sem privilégio',
+      'severidade': 'médio',
+      'status': 'em andamento',
+      'responsavel': 'João da Silva'
+  },
+  "INC-46": {
+      'tipo': 'Outro',
+      'titulo': 'Provável sniffer na rede',
+      'severidade': 'alto',
+      'status': 'aberto',
+      'responsavel': 'Luana'
+  },
+  "INC-47": {
+      'tipo': 'SQL Injection',
+      'titulo': 'Vulnerabilidade no ambiente de testes',
+      'severidade': 'baixo',
+      'status': 'resolvido',
+      'responsavel': 'Juliano'
+  }
+};
 
 void main() {
   runApp(const CentralIncidentesApp());
@@ -141,14 +138,22 @@ class CentralIncidentesApp extends StatelessWidget {
         backgroundColor: Colors.blue,
         body: ListView(
           padding: const EdgeInsets.all(8),
-          children:[
-          IncidenteCard(incidente: incidenteTeste),
-          IncidenteCard(incidente: incidenteTeste2),
-          IncidenteCard(incidente: incidenteTeste3),
-          IncidenteCard(incidente: incidenteTeste4),
-          IncidenteCard(incidente: incidenteTeste5),
-          IncidenteCard(incidente: incidenteTeste6),
-          ]),
+          children: incidentesConhecidos.entries.map((entry) {
+            final ident = entry.key;
+            final i_objeto = entry.value as Map<String, Object?>;
+
+            return IncidenteCard(
+              incidente: Incidente(
+                identificador: ident,
+                tipo: i_objeto['tipo'] as String,
+                titulo: i_objeto['titulo'] as String,
+                severidade: i_objeto['severidade'] as String,
+                status: i_objeto['status'] as String,
+                responsavel: i_objeto['responsavel'] as String?,
+              ),
+            );
+          }).toList(),
+        )
       ),
     );
   }
