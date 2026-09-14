@@ -35,7 +35,7 @@ class Incidente {
 class IncidenteCard extends StatelessWidget{
   final Incidente incidente;
 
-  IncidenteCard({
+  const IncidenteCard({
     super.key,
     required this.incidente,
   });
