@@ -40,17 +40,17 @@ class IncidenteCard extends StatelessWidget{
     super.key,
     required this.incidente,
   }){
-    switch(this.incidente.severidade){
+    switch(incidente.severidade){
       case 'crítico':
-        this.icone = Icons.local_fire_department;
+        icone = Icons.local_fire_department;
       case 'alto':
-        this.icone = Icons.warning;
+        icone = Icons.warning;
       case 'médio':
-        this.icone = Icons.alarm_add_outlined;
+        icone = Icons.alarm_add_outlined;
       case 'baixo':
-        this.icone = Icons.air_sharp;
+        icone = Icons.air_sharp;
       default:
-        this.icone = Icons.ads_click_sharp;
+        icone = Icons.ads_click_sharp;
     }
   }
 
