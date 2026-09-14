@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:core';
 
 class Incidente {
   final String identificador; //INC-1042
