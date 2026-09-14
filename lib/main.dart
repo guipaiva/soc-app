@@ -6,7 +6,7 @@ class Incidente {
   final String titulo;
   final String severidade; //crítico, alto, médio, baixo
   final String status; //aberto, em andamento, resolvido
-  final DateTime data_criacao;
+  final DateTime dataCriacao;
   final String? responsavel;
 
   Incidente({
@@ -16,13 +16,13 @@ class Incidente {
     required this.severidade,
     this.status = 'aberto',
     this.responsavel,
-    required this.data_criacao,
+    required this.dataCriacao,
   });
 
   String getResponsavel() => this.responsavel ?? 'Sem responsável';
 
   String get tempoDeCriacao {
-    final diferenca = DateTime.now().difference(data_criacao);
+    final diferenca = DateTime.now().difference(dataCriacao);
     if(diferenca.inDays > 0)
       return 'há ${diferenca.inDays} dias';
     else if(diferenca.inHours > 0)
@@ -82,14 +82,14 @@ Map<String, Object> incidentesConhecidos = {
       'severidade': 'crítico',
       'status': 'aberto',
       'responsavel': 'Lucas',
-      'data_criacao':  DateTime(2026, 9, 11, 22, 4)
+      'dataCriacao':  DateTime(2026, 9, 11, 22, 4)
   },
   "INC-43": {
       'tipo': 'Malware',
       'titulo': 'Malware no PC do Jhonathan',
       'severidade': 'baixo',
       'status': 'aberto',
-      'data_criacao':  DateTime(2026, 9, 1, 14, 0)
+      'dataCriacao':  DateTime(2026, 9, 1, 14, 0)
       // responsavel: 'Sem responsável'
   },
   "INC-44": {
@@ -98,7 +98,7 @@ Map<String, Object> incidentesConhecidos = {
       'severidade': 'alto',
       'status': 'resolvido',
       'responsavel': 'Mateus',
-      'data_criacao':  DateTime(2026, 9, 13, 22, 5)
+      'dataCriacao':  DateTime(2026, 9, 13, 22, 5)
   },
   "INC-45": {
       'tipo': 'Acesso não autorizado',
@@ -106,7 +106,7 @@ Map<String, Object> incidentesConhecidos = {
       'severidade': 'médio',
       'status': 'em andamento',
       'responsavel': 'João da Silva',
-      'data_criacao':  DateTime(2026, 9, 10, 10, 0)
+      'dataCriacao':  DateTime(2026, 9, 10, 10, 0)
   },
   "INC-46": {
       'tipo': 'Outro',
@@ -114,7 +114,7 @@ Map<String, Object> incidentesConhecidos = {
       'severidade': 'alto',
       'status': 'aberto',
       'responsavel': 'Luana',
-      'data_criacao':  DateTime(2026, 9, 13, 23, 0)
+      'dataCriacao':  DateTime(2026, 9, 13, 23, 0)
   },
   "INC-47": {
       'tipo': 'SQL Injection',
@@ -122,7 +122,7 @@ Map<String, Object> incidentesConhecidos = {
       'severidade': 'baixo',
       'status': 'resolvido',
       'responsavel': 'Juliano',
-      'data_criacao':  DateTime(2026, 9, 2, 15, 15)
+      'dataCriacao':  DateTime(2026, 9, 2, 15, 15)
   }
 };
 
@@ -157,7 +157,7 @@ class CentralIncidentesApp extends StatelessWidget {
                 severidade: i_objeto['severidade'] as String,
                 status: i_objeto['status'] as String,
                 responsavel: i_objeto['responsavel'] as String?,
-                data_criacao: i_objeto['data_criacao'] as DateTime,
+                dataCriacao: i_objeto['dataCriacao'] as DateTime,
               ),
             );
           }).toList(),
