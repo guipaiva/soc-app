@@ -1,6 +1,41 @@
-enum Severidade { critico, alto, medio, baixo }
+enum StatusIncidente {
+  aberto("Aberto"),
+  emAndamento("Em Andamento"), 
+  resolvido("Resolvido");
 
-enum StatusIncidente { aberto, emAndamento, resolvido }
+  final String texto;
+  const StatusIncidente(this.texto);
+
+  StatusIncidente get proximo {
+    switch (this){
+      case StatusIncidente.aberto:
+        return StatusIncidente.emAndamento;
+      case StatusIncidente.emAndamento:
+        return StatusIncidente.resolvido;
+      case StatusIncidente.resolvido:
+        return StatusIncidente.aberto;
+    }
+  }
+}
+
+enum Severidade {
+  critico, alto, medio, baixo,
+}
+
+extension SeveridadeExtension on Severidade {
+  String get textoExibicao {
+    switch (this) {
+      case Severidade.critico:
+        return 'Crítico';
+      case Severidade.alto:
+        return 'Alto';
+      case Severidade.medio:
+        return 'Médio';
+      case Severidade.baixo:
+        return 'Baixo';
+    }
+  }
+}
 
 class Incidente {
   final String id;
