@@ -34,9 +34,9 @@ No GitHub, no seu fork, clique em **Sync fork** para trazer o `main` atualizado.
 ```bash
 git checkout main
 git pull
-git checkout -b aula-06              # número da aula
+git checkout -b aula-07              # número da aula
 # ... trabalho, commits ...
-git push -u origin aula-06
+git push -u origin aula-07
 ```
 
 Depois, no GitHub, abra um Pull Request do seu branch para o `main` de `guipaiva/soc-app` e cole
