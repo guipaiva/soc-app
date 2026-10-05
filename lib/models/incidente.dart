@@ -1,6 +1,25 @@
 enum Severidade { critico, alto, medio, baixo }
 
-enum StatusIncidente { aberto, emAndamento, resolvido }
+enum StatusIncidente {
+  aberto('Aberto'),
+  emAndamento('Em andamento'),
+  resolvido('Resolvido');
+
+  final String texto;
+
+  const StatusIncidente(this.texto);
+
+  StatusIncidente get proximo {
+    switch (this) {
+      case StatusIncidente.aberto:
+        return StatusIncidente.emAndamento;
+      case StatusIncidente.emAndamento:
+        return StatusIncidente.resolvido;
+      case StatusIncidente.resolvido:
+        return StatusIncidente.aberto;
+    }
+  }
+}
 
 class Incidente {
   final String id;
