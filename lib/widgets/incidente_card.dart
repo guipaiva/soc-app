@@ -51,93 +51,98 @@ Color corDoStatus(StatusIncidente status) {
   }
 }
 
-class IncidenteCard extends StatefulWidget {
-  final Incidente incidente;
+class ChipSeveridade extends StatelessWidget {
+  final Severidade severidade;
 
-  const IncidenteCard({super.key, required this.incidente});
-
-  @override
-  State<IncidenteCard> createState() => _IncidenteCardState();
-}
-
-class _IncidenteCardState extends State<IncidenteCard> {
-  late StatusIncidente status = widget.incidente.status;
+  const ChipSeveridade({super.key, required this.severidade});
 
   @override
   Widget build(BuildContext context) {
-    final incidente = widget.incidente;
+    final cor = corDaSeveridade(severidade);
+
+    return Chip(
+      label: Text(
+        textoDaSeveridade(severidade),
+        style: TextStyle(
+          color: cor,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      backgroundColor: cor.withValues(alpha: 0.14),
+      side: BorderSide(color: cor),
+    );
+  }
+}
+
+class IncidenteCard extends StatelessWidget {
+  final Incidente incidente;
+  final VoidCallback onTap;
+
+  const IncidenteCard({
+    super.key,
+    required this.incidente,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final corSeveridade = corDaSeveridade(incidente.severidade);
-    final corStatus = corDoStatus(status);
+    final corStatus = corDoStatus(incidente.status);
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Chip(
-                  label: Text(
-                    textoDaSeveridade(incidente.severidade),
-                    style: TextStyle(
-                      color: corSeveridade,
-                      fontWeight: FontWeight.bold,
-                    ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ChipSeveridade(severidade: incidente.severidade),
+                  Text(
+                    incidente.abertoHa,
+                    style: TextStyle(color: Colors.grey.shade600),
                   ),
-                  backgroundColor: corSeveridade.withValues(alpha: 0.14),
-                  side: BorderSide(color: corSeveridade),
-                ),
-                Text(
-                  incidente.abertoHa,
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(iconeDaSeveridade(incidente.severidade), color: corSeveridade),
-                const SizedBox(width: 8),
-                Text(
-                  incidente.titulo,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '#${incidente.id} · ${incidente.tipo}',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Chip(
-                  label: Text(
-                    status.texto,
-                    style: TextStyle(
-                      color: corStatus,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(iconeDaSeveridade(incidente.severidade), color: corSeveridade),
+                  const SizedBox(width: 8),
+                  Text(
+                    incidente.titulo,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  backgroundColor: Colors.grey.shade200,
-                ),
-                Text(incidente.responsavel ?? 'Sem responsável'),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  status = status.proximo;
-                });
-              },
-              child: const Text('Avançar status'),
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '#${incidente.id} · ${incidente.tipo}',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Chip(
+                    label: Text(
+                      incidente.status.texto,
+                      style: TextStyle(
+                        color: corStatus,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    backgroundColor: Colors.grey.shade200,
+                  ),
+                  Text(incidente.responsavel ?? 'Sem responsável'),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

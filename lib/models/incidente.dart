@@ -7,17 +7,6 @@ enum StatusIncidente {
 
   final String texto;
   const StatusIncidente(this.texto);
-
-  StatusIncidente get proximo {
-    switch (this) {
-      case StatusIncidente.aberto:
-        return StatusIncidente.emAndamento;
-      case StatusIncidente.emAndamento:
-        return StatusIncidente.resolvido;
-      case StatusIncidente.resolvido:
-        return StatusIncidente.aberto;
-    }
-  }
 }
 
 class Incidente {
@@ -25,11 +14,13 @@ class Incidente {
   final String titulo;
   final String tipo;
   final Severidade severidade;
-  final StatusIncidente status;
+  StatusIncidente status;
   final DateTime abertoEm;
   final String? responsavel;
+  final String descricao;
+  final String? ipRelacionado;
 
-  const Incidente({
+  Incidente({
     required this.id,
     required this.titulo,
     required this.tipo,
@@ -37,6 +28,8 @@ class Incidente {
     required this.status,
     required this.abertoEm,
     this.responsavel,
+    required this.descricao,
+    this.ipRelacionado,
   });
 
   String get abertoHa {
