@@ -110,13 +110,18 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
             padding: const EdgeInsets.all(12),
             child: ElevatedButton(
                   onPressed: () async {
-                    await Navigator.push(
+                    final novoIncidente = await Navigator.push(
                       context,
-                      MaterialPageRoute<Widget>(
+                      MaterialPageRoute<Incidente>(
                         builder: (context) =>
                             NovoIncidenteScreen(),
                       ),
                     );
+                    if (novoIncidente != null) {
+                      setState(() {
+                        incidentes.add(novoIncidente);
+                      });
+                    }
                   },
                   child: const Text('Novo incidente'),
                 ),
