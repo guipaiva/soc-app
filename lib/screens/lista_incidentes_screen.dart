@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 import '../widgets/incidente_card.dart';
 import 'detalhe_incidente_screen.dart';
+import 'novo_incidente_screen.dart';
 
 final agora = DateTime.now();
 
@@ -85,6 +86,14 @@ final List<Incidente> incidentes = [
   ),
 ];
 
+String gerarProximoId() {
+  final maiorNumero = incidentes.fold<int>(0, (maior, incidente) {
+    final numero = int.parse(incidente.id.replaceFirst('INC-', ''));
+    return numero > maior ? numero : maior;
+  });
+  return 'INC-${maiorNumero + 1}';
+}
+
 class ListaIncidentesScreen extends StatefulWidget {
   const ListaIncidentesScreen({super.key});
 
@@ -95,6 +104,22 @@ class ListaIncidentesScreen extends StatefulWidget {
 class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   StatusIncidente? filtro;
 
+  Future<void> _abrirNovoIncidente() async {
+    final novoIncidente = await Navigator.push(
+      context,
+      MaterialPageRoute<Incidente>(
+        builder: (context) =>
+            NovoIncidenteScreen(proximoId: gerarProximoId()),
+      ),
+    );
+    if (novoIncidente != null) {
+      setState(() {
+        incidentes.insert(0, novoIncidente);
+        filtro = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final visiveis = incidentes
@@ -103,6 +128,11 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Incidentes')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _abrirNovoIncidente,
+        icon: const Icon(Icons.add),
+        label: const Text('Novo incidente'),
+      ),
       body: Column(
         children: [
           Padding(
