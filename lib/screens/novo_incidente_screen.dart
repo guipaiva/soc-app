@@ -132,7 +132,7 @@ class _NovoIncidenteScreenState extends State<NovoIncidenteScreen> {
             onPressed: () {
                 if (_formKey.currentState!.validate()) {
                     Incidente novoIncidente = Incidente(
-                        id: 'INC-'+widget.numUltimoIncidente.toString(),
+                        id: 'INC-${widget.numUltimoIncidente}',
                         titulo: _tituloController.text,
                         tipo: tipo,
                         severidade: severidade,
