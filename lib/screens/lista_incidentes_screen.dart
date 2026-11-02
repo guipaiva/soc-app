@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 import '../widgets/incidente_card.dart';
 import 'detalhe_incidente_screen.dart';
+import 'novo_incidente_screen.dart';
 
 final agora = DateTime.now();
 
@@ -111,6 +112,31 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final novo = await Navigator.push<Incidente>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NovoIncidenteScreen(),
+                      ),
+                    );
+                    if (novo != null) {
+                      setState(() {
+                        incidentes.insert(0, novo);
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Novo Incidente'),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                
                 ChoiceChip(
                   label: const Text('Todos'),
                   selected: filtro == null,
