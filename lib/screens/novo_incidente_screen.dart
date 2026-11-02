@@ -1,6 +1,41 @@
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 
+String? validarTitulo(String? valor) {
+    if (valor == null || valor.trim().isEmpty) {
+        return 'Informe o título';
+    }
+    if (valor.trim().length < 5) {
+        return 'O título tem pelo menos 5 letras';
+    }
+    return null;
+}
+
+String? validarDescricao(String? valor) {
+    if (valor == null || valor.trim().isEmpty) {
+        return 'Informe a descrição';
+    }
+    if (valor.trim().length < 20) {
+        return 'A descrição tem pelo menos 20 letras';
+    }
+    return null;
+}
+
+String? validarIpRelacionado(String? valor) {
+    if (valor == null || valor.trim().isEmpty) {
+        return null;
+    }
+
+    final ipv4Regex = RegExp(
+        r'^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$',
+    );
+
+    if (!ipv4Regex.hasMatch(valor.trim())) {
+        return 'O IP está no padrão errado, quatro números de 0 a 255 separados por ponto. Válidos: 187.44.12.90, 10.0.0.1';
+    }
+    return null;
+}
+
 class NovoIncidenteScreen extends StatefulWidget {
   const NovoIncidenteScreen({super.key});
 
@@ -35,9 +70,10 @@ class _NovoIncidenteScreenState extends State<NovoIncidenteScreen> {
             key: _formKey,
           child: Column(
             children: [
-                TextField(
+                TextFormField(
                     controller: _tituloController,
                     decoration: InputDecoration(labelText: 'Título'),
+                    validator: validarTitulo,
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -76,14 +112,16 @@ class _NovoIncidenteScreenState extends State<NovoIncidenteScreen> {
                     )).toList(),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                TextFormField(
                     controller: _descricaoController,
                     decoration: InputDecoration(labelText: 'Descrição'),
+                    validator: validarDescricao,
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                TextFormField(
                     controller: _ipRelacionadoController,
                     decoration: InputDecoration(labelText: 'IP relacionado (opcional)'),
+                    validator: validarIpRelacionado,
                 ),
             ],
           )),
@@ -94,8 +132,8 @@ class _NovoIncidenteScreenState extends State<NovoIncidenteScreen> {
                     setState(() {
                         
                     });
+                    Navigator.pop(context);
                 }
-              Navigator.pop(context);
             },
             child: const Text('Criar incidente'),
           ),
