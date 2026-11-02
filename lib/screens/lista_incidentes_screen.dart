@@ -10,7 +10,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1045',
     titulo: 'Login falho repetido — conta admin',
-    tipo: 'Acesso não autorizado',
+    tipo: TipoIncidente.acessoNaoAutorizado,
     severidade: Severidade.critico,
     status: StatusIncidente.aberto,
     abertoEm: agora.subtract(const Duration(minutes: 15)),
@@ -22,7 +22,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1044',
     titulo: 'Acesso fora do horário — VPN corporativa',
-    tipo: 'Acesso não autorizado',
+    tipo: TipoIncidente.acessoNaoAutorizado,
     severidade: Severidade.critico,
     status: StatusIncidente.aberto,
     abertoEm: agora.subtract(const Duration(minutes: 40)),
@@ -36,7 +36,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1042',
     titulo: 'Tentativa de phishing — portal de RH',
-    tipo: 'Phishing',
+    tipo: TipoIncidente.phishing,
     severidade: Severidade.alto,
     status: StatusIncidente.emAndamento,
     abertoEm: agora.subtract(const Duration(hours: 3)),
@@ -50,7 +50,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1039',
     titulo: 'Malware detectado — estação FIN-07',
-    tipo: 'Malware',
+    tipo: TipoIncidente.malware,
     severidade: Severidade.alto,
     status: StatusIncidente.emAndamento,
     abertoEm: agora.subtract(const Duration(days: 1, hours: 2)),
@@ -62,7 +62,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1031',
     titulo: 'Picos de tráfego — API pública',
-    tipo: 'DDoS',
+    tipo: TipoIncidente.ddos,
     severidade: Severidade.medio,
     status: StatusIncidente.resolvido,
     abertoEm: agora.subtract(const Duration(days: 2, hours: 5)),
@@ -75,7 +75,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1027',
     titulo: 'Certificado TLS expirado — intranet',
-    tipo: 'Outro',
+    tipo: TipoIncidente.outro,
     severidade: Severidade.baixo,
     status: StatusIncidente.resolvido,
     abertoEm: agora.subtract(const Duration(days: 4)),

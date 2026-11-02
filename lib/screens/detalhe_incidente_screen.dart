@@ -61,7 +61,7 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          campo('Tipo', incidente.tipo),
+          campo('Tipo', incidente.tipo.texto),
           campo('Aberto', incidente.abertoHa),
           campo('Responsável', incidente.responsavel ?? 'Sem responsável'),
           campo('IP relacionado', incidente.ipRelacionado ?? '—'),

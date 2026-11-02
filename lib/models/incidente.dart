@@ -1,4 +1,23 @@
-enum Severidade { critico, alto, medio, baixo }
+enum Severidade {
+  critico('Crítico'),
+  alto('Alto'),
+  medio('Médio'),
+  baixo('Baixo');
+
+  final String texto;
+  const Severidade(this.texto);
+}
+
+enum TipoIncidente {
+  phishing('Phishing'),
+  malware('Malware'),
+  ddos('DDoS'),
+  acessoNaoAutorizado('Acesso não autorizado'),
+  outro('Outro');
+
+  final String texto;
+  const TipoIncidente(this.texto);
+}
 
 enum StatusIncidente {
   aberto('Aberto'),
@@ -23,7 +42,7 @@ enum StatusIncidente {
 class Incidente {
   final String id;
   final String titulo;
-  final String tipo;
+  final TipoIncidente tipo;
   final Severidade severidade;
   StatusIncidente status;
   final DateTime abertoEm;
