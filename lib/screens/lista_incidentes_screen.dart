@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 import '../widgets/incidente_card.dart';
 import 'detalhe_incidente_screen.dart';
+import 'novo_incidente_screen.dart';
 
 final agora = DateTime.now();
 
@@ -95,6 +96,17 @@ class ListaIncidentesScreen extends StatefulWidget {
 class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   StatusIncidente? filtro;
 
+  String proximoId() {
+    var maior = 0;
+    for (final incidente in incidentes) {
+      final numero = int.parse(incidente.id.substring(4));
+      if (numero > maior) {
+        maior = numero;
+      }
+    }
+    return 'INC-${maior + 1}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final visiveis = incidentes
@@ -105,6 +117,29 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
       appBar: AppBar(title: const Text('Incidentes')),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final novo = await Navigator.push(
+                    context,
+                    MaterialPageRoute<Incidente>(
+                      builder: (context) =>
+                          NovoIncidenteScreen(id: proximoId()),
+                    ),
+                  );
+                  if (novo != null) {
+                    setState(() {
+                      incidentes.insert(0, novo);
+                    });
+                  }
+                },
+                child: const Text('Novo incidente'),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(12),
             child: Wrap(
