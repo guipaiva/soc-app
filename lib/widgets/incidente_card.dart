@@ -105,7 +105,7 @@ class IncidenteCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '#${incidente.id} · ${incidente.tipo}',
+              '#${incidente.id} · ${incidente.tipo.texto}',
               style: TextStyle(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 8),
