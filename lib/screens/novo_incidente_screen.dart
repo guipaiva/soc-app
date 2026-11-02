@@ -3,7 +3,7 @@ import '../models/incidente.dart';
 
 String? validarTitulo(String? valor) {
     if (valor == null || valor.trim().isEmpty) {
-        return 'Informe o título';
+        return 'Este campo é obrigatório.';
     }
     if (valor.trim().length < 5) {
         return 'O título tem pelo menos 5 letras';
@@ -13,7 +13,7 @@ String? validarTitulo(String? valor) {
 
 String? validarDescricao(String? valor) {
     if (valor == null || valor.trim().isEmpty) {
-        return 'Informe a descrição';
+        return 'Este campo é obrigatório.';
     }
     if (valor.trim().length < 20) {
         return 'A descrição tem pelo menos 20 letras';
@@ -129,10 +129,17 @@ class _NovoIncidenteScreenState extends State<NovoIncidenteScreen> {
           ElevatedButton(
             onPressed: () {
                 if (_formKey.currentState!.validate()) {
-                    setState(() {
-                        
-                    });
-                    Navigator.pop(context);
+                    Incidente novoIncidente = Incidente(
+                        id: 'INC-1046',
+                        titulo: _tituloController.text,
+                        tipo: tipo,
+                        severidade: severidade,
+                        status: StatusIncidente.aberto,
+                        abertoEm: DateTime.now(),
+                        descricao: _descricaoController.text,
+                        ipRelacionado: _ipRelacionadoController.text == ''? null: _ipRelacionadoController.text,
+                    );
+                    Navigator.pop(context, novoIncidente);
                 }
             },
             child: const Text('Criar incidente'),
