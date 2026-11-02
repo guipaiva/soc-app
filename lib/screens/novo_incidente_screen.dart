@@ -37,7 +37,9 @@ String? validarIpRelacionado(String? valor) {
 }
 
 class NovoIncidenteScreen extends StatefulWidget {
-  const NovoIncidenteScreen({super.key});
+    final int numUltimoIncidente;
+
+  const NovoIncidenteScreen({super.key, required this.numUltimoIncidente});
 
   @override
   State<NovoIncidenteScreen> createState() => _NovoIncidenteScreenState();
@@ -130,7 +132,7 @@ class _NovoIncidenteScreenState extends State<NovoIncidenteScreen> {
             onPressed: () {
                 if (_formKey.currentState!.validate()) {
                     Incidente novoIncidente = Incidente(
-                        id: 'INC-1046',
+                        id: 'INC-'+widget.numUltimoIncidente.toString(),
                         titulo: _tituloController.text,
                         tipo: tipo,
                         severidade: severidade,

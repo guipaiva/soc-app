@@ -95,6 +95,11 @@ class ListaIncidentesScreen extends StatefulWidget {
 
 class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   StatusIncidente? filtro;
+  int numUltimoIncidente = int.parse(incidentes.reduce((atual, prox) {
+    int idAtual = int.parse(atual.id.split('-')[1]);
+    int idProx = int.parse(prox.id.split('-')[1]);
+    return idAtual > idProx? atual : prox;
+  }).id.split('-')[1]) + 1;
 
   @override
   Widget build(BuildContext context) {
@@ -114,12 +119,13 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
                       context,
                       MaterialPageRoute<Incidente>(
                         builder: (context) =>
-                            NovoIncidenteScreen(),
+                            NovoIncidenteScreen(numUltimoIncidente: numUltimoIncidente),
                       ),
                     );
                     if (novoIncidente != null) {
                       setState(() {
                         incidentes.add(novoIncidente);
+                        numUltimoIncidente++;
                       });
                     }
                   },
