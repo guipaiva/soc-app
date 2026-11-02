@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 import '../widgets/incidente_card.dart';
 import 'detalhe_incidente_screen.dart';
+import 'novo_incidente_screen.dart';
 
 final agora = DateTime.now();
 
@@ -9,7 +10,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1045',
     titulo: 'Login falho repetido — conta admin',
-    tipo: 'Acesso não autorizado',
+    tipo: TipoIncidente.acessoNaoAutorizado,
     severidade: Severidade.critico,
     status: StatusIncidente.aberto,
     abertoEm: agora.subtract(const Duration(minutes: 15)),
@@ -21,7 +22,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1044',
     titulo: 'Acesso fora do horário — VPN corporativa',
-    tipo: 'Acesso não autorizado',
+    tipo: TipoIncidente.acessoNaoAutorizado,
     severidade: Severidade.critico,
     status: StatusIncidente.aberto,
     abertoEm: agora.subtract(const Duration(minutes: 40)),
@@ -35,7 +36,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1042',
     titulo: 'Tentativa de phishing — portal de RH',
-    tipo: 'Phishing',
+    tipo: TipoIncidente.phishing,
     severidade: Severidade.alto,
     status: StatusIncidente.emAndamento,
     abertoEm: agora.subtract(const Duration(hours: 3)),
@@ -49,7 +50,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1039',
     titulo: 'Malware detectado — estação FIN-07',
-    tipo: 'Malware',
+    tipo: TipoIncidente.malware,
     severidade: Severidade.alto,
     status: StatusIncidente.emAndamento,
     abertoEm: agora.subtract(const Duration(days: 1, hours: 2)),
@@ -61,7 +62,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1031',
     titulo: 'Picos de tráfego — API pública',
-    tipo: 'DDoS',
+    tipo: TipoIncidente.ddos,
     severidade: Severidade.medio,
     status: StatusIncidente.resolvido,
     abertoEm: agora.subtract(const Duration(days: 2, hours: 5)),
@@ -74,7 +75,7 @@ final List<Incidente> incidentes = [
   Incidente(
     id: 'INC-1027',
     titulo: 'Certificado TLS expirado — intranet',
-    tipo: 'Outro',
+    tipo: TipoIncidente.outro,
     severidade: Severidade.baixo,
     status: StatusIncidente.resolvido,
     abertoEm: agora.subtract(const Duration(days: 4)),
@@ -94,6 +95,11 @@ class ListaIncidentesScreen extends StatefulWidget {
 
 class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   StatusIncidente? filtro;
+  int numUltimoIncidente = int.parse(incidentes.reduce((atual, prox) {
+    int idAtual = int.parse(atual.id.split('-')[1]);
+    int idProx = int.parse(prox.id.split('-')[1]);
+    return idAtual > idProx? atual : prox;
+  }).id.split('-')[1]) + 1;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +111,27 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
       appBar: AppBar(title: const Text('Incidentes')),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: ElevatedButton(
+                  onPressed: () async {
+                    final novoIncidente = await Navigator.push(
+                      context,
+                      MaterialPageRoute<Incidente>(
+                        builder: (context) =>
+                            NovoIncidenteScreen(numUltimoIncidente: numUltimoIncidente),
+                      ),
+                    );
+                    if (novoIncidente != null) {
+                      setState(() {
+                        incidentes.add(novoIncidente);
+                        numUltimoIncidente++;
+                      });
+                    }
+                  },
+                  child: const Text('Novo incidente'),
+                ),
+          ),
           Padding(
             padding: const EdgeInsets.all(12),
             child: Wrap(
