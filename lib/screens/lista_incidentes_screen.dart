@@ -108,11 +108,7 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ElevatedButton(
+            child: ElevatedButton(
                   onPressed: () async {
                     await Navigator.push(
                       context,
@@ -123,9 +119,7 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
                     );
                   },
                   child: const Text('Novo incidente'),
-                )
-              ],
-            ),
+                ),
           ),
           Padding(
             padding: const EdgeInsets.all(12),
