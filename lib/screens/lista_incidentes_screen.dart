@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 import '../widgets/incidente_card.dart';
 import 'detalhe_incidente_screen.dart';
+import 'novo_incidente_screen.dart';
 
 final agora = DateTime.now();
 
@@ -95,6 +96,23 @@ class ListaIncidentesScreen extends StatefulWidget {
 class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   StatusIncidente? filtro;
 
+
+  String proximoId() {
+    int maiorId = 0;
+
+    for (final incidente in incidentes) {
+      final numero = int.tryParse(
+        incidente.id.replaceFirst('INC-', ''),
+      );
+
+      if (numero != null && numero > maiorId) {
+        maiorId = numero;
+      }
+    }
+
+    return 'INC-${maiorId + 1}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final visiveis = incidentes
@@ -105,6 +123,31 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
       appBar: AppBar(title: const Text('Incidentes')),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final novoIncidente = await Navigator.push<Incidente>(
+                    context,
+                    MaterialPageRoute<Incidente>(
+                      builder: (context) => NovoIncidenteScreen(
+                        idNovo: proximoId(),
+                      ),
+                    ),
+                  );
+
+                  if (novoIncidente != null) {
+                    setState(() {
+                      incidentes.insert(0, novoIncidente);
+                    });
+                  }
+                },
+                child: const Text('Novo incidente'),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(12),
             child: Wrap(
