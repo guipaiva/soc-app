@@ -100,14 +100,9 @@ class _NovoIncidenteScreenState extends State<NovoIncidenteScreen> {
             child: const Text('Criar incidente'),
           ),
           const SizedBox(height: 12),
-          ElevatedButton(
+          TextButton(
             onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                    setState(() {
-                        
-                    });
-                }
-              Navigator.pop(context);
+              Navigator.of(context).pop();
             },
             child: const Text('Cancelar'),
           ),
