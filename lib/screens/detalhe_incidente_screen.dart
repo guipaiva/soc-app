@@ -75,20 +75,19 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
           const SizedBox(height: 16),
           const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: StatusIncidente.values
                 .map(
-                  (opcao) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(opcao.texto),
-                      selected: opcao == status,
-                      onSelected: (_) {
-                        setState(() {
-                          escolhido = opcao;
-                        });
-                      },
-                    ),
+                  (opcao) => ChoiceChip(
+                    label: Text(opcao.texto),
+                    selected: opcao == status,
+                    onSelected: (_) {
+                      setState(() {
+                        escolhido = opcao;
+                      });
+                    },
                   ),
                 )
                 .toList(),

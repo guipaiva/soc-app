@@ -95,9 +95,11 @@ class IncidenteCard extends StatelessWidget {
                   color: corSeveridade,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  incidente.titulo,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Text(
+                    incidente.titulo,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
