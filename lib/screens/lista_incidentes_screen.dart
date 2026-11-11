@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
 import '../models/incidente.dart';
 import '../widgets/incidente_card.dart';
 import 'detalhe_incidente_screen.dart';
@@ -6,7 +8,7 @@ import 'novo_incidente_screen.dart';
 
 final agora = DateTime.now();
 
-final List<Incidente> incidentes = [
+final List<Incidente> exemplos = [
   Incidente(
     id: 'INC-1045',
     titulo: 'Login falho repetido — conta admin',
@@ -86,6 +88,21 @@ final List<Incidente> incidentes = [
   ),
 ];
 
+Incidente incidenteDoFirestore(String id, Map<String, dynamic> dados) {
+  final Timestamp abertoEm = dados['abertoEm'];
+  return Incidente(
+    id: id,
+    titulo: dados['titulo'] as String,
+    tipo: dados['tipo'] as String,
+    severidade: Severidade.values.byName(dados['severidade'] as String),
+    status: StatusIncidente.values.byName(dados['status'] as String),
+    abertoEm: abertoEm.toDate(),
+    responsavel: dados['responsavel'] as String?,
+    descricao: dados['descricao'] as String,
+    ipRelacionado: dados['ipRelacionado'] as String?,
+  );
+}
+
 class ListaIncidentesScreen extends StatefulWidget {
   const ListaIncidentesScreen({super.key});
 
@@ -95,107 +112,157 @@ class ListaIncidentesScreen extends StatefulWidget {
 
 class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   StatusIncidente? filtro;
-  int proximoNumero = 1046;
+
+  final colecao = FirebaseFirestore.instance.collection('incidentes');
+  late final Stream<QuerySnapshot<Map<String, dynamic>>> fluxo = colecao
+      .orderBy('abertoEm', descending: true)
+      .snapshots();
+
+  Future<void> carregarExemplos() async {
+    for (final exemplo in exemplos) {
+      await colecao.doc(exemplo.id).set(exemplo.toMap());
+    }
+  }
+
+  // O próximo número vem do maior id que já existe no banco, não de um
+  // contador na memória do app.
+  Future<String> proximoId() async {
+    final resultado = await colecao.get();
+    var maior = 1045;
+    for (final doc in resultado.docs) {
+      final numero = int.tryParse(doc.id.replaceFirst('INC-', ''));
+      if (numero != null && numero > maior) {
+        maior = numero;
+      }
+    }
+    return 'INC-${maior + 1}';
+  }
 
   Future<void> abrirNovoIncidente() async {
+    final id = await proximoId();
+    if (!mounted) return;
     final novo = await Navigator.push(
       context,
       MaterialPageRoute<Incidente>(
-        builder: (context) =>
-            NovoIncidenteScreen(proximoId: 'INC-$proximoNumero'),
+        builder: (context) => NovoIncidenteScreen(proximoId: id),
       ),
     );
     if (novo != null) {
-      setState(() {
-        incidentes.insert(0, novo);
-        proximoNumero++;
-      });
+      await colecao.doc(novo.id).set(novo.toMap());
+    }
+  }
+
+  Future<void> abrirDetalhe(Incidente incidente) async {
+    final novoStatus = await Navigator.push(
+      context,
+      MaterialPageRoute<StatusIncidente>(
+        builder: (context) => DetalheIncidenteScreen(incidente: incidente),
+      ),
+    );
+    if (novoStatus != null) {
+      await colecao.doc(incidente.id).update({'status': novoStatus.name});
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final visiveis = incidentes
-        .where((incidente) => filtro == null || incidente.status == filtro)
-        .toList();
-
     return Scaffold(
       appBar: AppBar(title: const Text('Incidentes')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            child: Align(
-              alignment: Alignment.centerLeft,
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: fluxo,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Erro ao carregar incidentes: ${snapshot.error}'),
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data!.docs;
+          if (docs.isEmpty) {
+            return Center(
               child: ElevatedButton(
-                onPressed: abrirNovoIncidente,
-                child: const Text('Novo incidente'),
+                onPressed: carregarExemplos,
+                child: const Text('Carregar exemplos'),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ChoiceChip(
-                  label: const Text('Todos'),
-                  selected: filtro == null,
-                  onSelected: (_) {
-                    setState(() {
-                      filtro = null;
-                    });
-                  },
+            );
+          }
+
+          final incidentes = docs
+              .map((doc) => incidenteDoFirestore(doc.id, doc.data()))
+              .toList();
+          final visiveis = incidentes
+              .where(
+                (incidente) => filtro == null || incidente.status == filtro,
+              )
+              .toList();
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: ElevatedButton(
+                    onPressed: abrirNovoIncidente,
+                    child: const Text('Novo incidente'),
+                  ),
                 ),
-                ChoiceChip(
-                  label: const Text('Em andamento'),
-                  selected: filtro == StatusIncidente.emAndamento,
-                  onSelected: (_) {
-                    setState(() {
-                      filtro = StatusIncidente.emAndamento;
-                    });
-                  },
-                ),
-                ChoiceChip(
-                  label: const Text('Resolvidos'),
-                  selected: filtro == StatusIncidente.resolvido,
-                  onSelected: (_) {
-                    setState(() {
-                      filtro = StatusIncidente.resolvido;
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(12),
-              children: visiveis
-                  .map(
-                    (incidente) => GestureDetector(
-                      onTap: () async {
-                        final novoStatus = await Navigator.push(
-                          context,
-                          MaterialPageRoute<StatusIncidente>(
-                            builder: (context) =>
-                                DetalheIncidenteScreen(incidente: incidente),
-                          ),
-                        );
-                        if (novoStatus != null) {
-                          setState(() {
-                            incidente.status = novoStatus;
-                          });
-                        }
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Todos'),
+                      selected: filtro == null,
+                      onSelected: (_) {
+                        setState(() {
+                          filtro = null;
+                        });
                       },
-                      child: IncidenteCard(incidente: incidente),
                     ),
-                  )
-                  .toList(),
-            ),
-          ),
-        ],
+                    ChoiceChip(
+                      label: const Text('Em andamento'),
+                      selected: filtro == StatusIncidente.emAndamento,
+                      onSelected: (_) {
+                        setState(() {
+                          filtro = StatusIncidente.emAndamento;
+                        });
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('Resolvidos'),
+                      selected: filtro == StatusIncidente.resolvido,
+                      onSelected: (_) {
+                        setState(() {
+                          filtro = StatusIncidente.resolvido;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(12),
+                  children: visiveis
+                      .map(
+                        (incidente) => GestureDetector(
+                          onTap: () => abrirDetalhe(incidente),
+                          child: IncidenteCard(incidente: incidente),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
