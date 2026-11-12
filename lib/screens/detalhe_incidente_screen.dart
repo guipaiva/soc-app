@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
+import '../services/incidentes_service.dart';
 import '../widgets/incidente_card.dart';
 
 class DetalheIncidenteScreen extends StatefulWidget {
@@ -13,6 +14,29 @@ class DetalheIncidenteScreen extends StatefulWidget {
 
 class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
   StatusIncidente? escolhido;
+  bool _salvando = false;
+
+  // Grava só o campo status do documento deste incidente.
+  Future<void> salvar(StatusIncidente status) async {
+    setState(() {
+      _salvando = true;
+    });
+
+    try {
+      await IncidentesService.atualizarStatus(widget.incidente.id, status);
+
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _salvando = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao salvar: $e')),
+      );
+    }
+  }
 
   Widget campo(String rotulo, String valor) {
     return Padding(
@@ -94,9 +118,7 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context, status);
-            },
+            onPressed: _salvando ? null : () => salvar(status),
             child: const Text('Salvar atualização'),
           ),
         ],

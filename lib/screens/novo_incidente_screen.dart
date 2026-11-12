@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
+import '../services/incidentes_service.dart';
 
 class NovoIncidenteScreen extends StatefulWidget {
-  final String idNovo;
-
-  const NovoIncidenteScreen({
-    super.key,
-    required this.idNovo,
-  });
+  const NovoIncidenteScreen({super.key});
 
   @override
   State<NovoIncidenteScreen> createState() =>
@@ -23,6 +19,7 @@ class _NovoIncidenteScreenState extends State<NovoIncidenteScreen> {
 
   String _tipoSelecionado = 'Outro';
   Severidade _severidadeSelecionada = Severidade.medio;
+  bool _salvando = false;
 
   final List<String> _tipos = [
     'Phishing',
@@ -116,27 +113,39 @@ class _NovoIncidenteScreenState extends State<NovoIncidenteScreen> {
     }
   }
 
-  // Cria o incidente e devolve o objeto para a tela anterior.
-  void criarIncidente() {
+  // Grava o incidente novo no banco (o id é gerado na transação).
+  Future<void> criarIncidente() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     final ip = _ipController.text.trim();
 
-    final incidente = Incidente(
-      id: widget.idNovo,
-      titulo: _tituloController.text.trim(),
-      tipo: _tipoSelecionado,
-      severidade: _severidadeSelecionada,
-      status: StatusIncidente.aberto,
-      abertoEm: DateTime.now(),
-      descricao: _descricaoController.text.trim(),
-      ipRelacionado: ip.isEmpty ? null : ip,
-      // responsavel não informado = sem responsável.
-    );
+    setState(() {
+      _salvando = true;
+    });
 
-    Navigator.pop(context, incidente);
+    try {
+      await IncidentesService.criar(
+        titulo: _tituloController.text.trim(),
+        tipo: _tipoSelecionado,
+        severidade: _severidadeSelecionada,
+        descricao: _descricaoController.text.trim(),
+        ipRelacionado: ip.isEmpty ? null : ip,
+        // responsavel não informado = sem responsável.
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _salvando = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao criar incidente: $e')),
+      );
+    }
   }
 
   @override
@@ -268,7 +277,7 @@ class _NovoIncidenteScreenState extends State<NovoIncidenteScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: criarIncidente,
+                onPressed: _salvando ? null : criarIncidente,
                 child: const Text('Criar incidente'),
               ),
             ),

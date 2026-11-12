@@ -1,12 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
+import '../services/incidentes_service.dart';
 import '../widgets/incidente_card.dart';
 import 'detalhe_incidente_screen.dart';
 import 'novo_incidente_screen.dart';
 
 final agora = DateTime.now();
 
-final List<Incidente> incidentes = [
+// Incidentes de exemplo: só são gravados no banco pelo botão
+// "Carregar exemplos" quando a coleção está vazia.
+final List<Incidente> exemplos = [
   Incidente(
     id: 'INC-1045',
     titulo: 'Login falho repetido — conta admin',
@@ -95,122 +99,153 @@ class ListaIncidentesScreen extends StatefulWidget {
 
 class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   StatusIncidente? filtro;
+  bool carregandoExemplos = false;
 
+  // Criado uma vez, para não reassinar o stream a cada rebuild.
+  final _stream = IncidentesService.stream;
 
-  String proximoId() {
-    int maiorId = 0;
+  Future<void> carregarExemplos() async {
+    setState(() {
+      carregandoExemplos = true;
+    });
 
-    for (final incidente in incidentes) {
-      final numero = int.tryParse(
-        incidente.id.replaceFirst('INC-', ''),
+    try {
+      await IncidentesService.carregarExemplos(exemplos);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar exemplos: $e')),
       );
-
-      if (numero != null && numero > maiorId) {
-        maiorId = numero;
+    } finally {
+      if (mounted) {
+        setState(() {
+          carregandoExemplos = false;
+        });
       }
     }
-
-    return 'INC-${maiorId + 1}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final visiveis = incidentes
-        .where((incidente) => filtro == null || incidente.status == filtro)
-        .toList();
-
     return Scaffold(
       appBar: AppBar(title: const Text('Incidentes')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  final novoIncidente = await Navigator.push<Incidente>(
-                    context,
-                    MaterialPageRoute<Incidente>(
-                      builder: (context) => NovoIncidenteScreen(
-                        idNovo: proximoId(),
-                      ),
-                    ),
-                  );
-
-                  if (novoIncidente != null) {
-                    setState(() {
-                      incidentes.insert(0, novoIncidente);
-                    });
-                  }
-                },
-                child: const Text('Novo incidente'),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _stream,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Erro ao carregar incidentes:\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ChoiceChip(
-                  label: const Text('Todos'),
-                  selected: filtro == null,
-                  onSelected: (_) {
-                    setState(() {
-                      filtro = null;
-                    });
-                  },
+            );
+          }
+
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final todos = snapshot.data!.docs
+              .map((doc) => incidenteDoFirestore(doc.id, doc.data()))
+              .toList();
+
+          // Coleção vazia: só o botão para carregar os exemplos.
+          if (todos.isEmpty) {
+            return Center(
+              child: ElevatedButton(
+                onPressed: carregandoExemplos ? null : carregarExemplos,
+                child: const Text('Carregar exemplos'),
+              ),
+            );
+          }
+
+          final visiveis = todos
+              .where((incidente) => filtro == null || incidente.status == filtro)
+              .toList();
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (context) => const NovoIncidenteScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Novo incidente'),
+                  ),
                 ),
-                ChoiceChip(
-                  label: const Text('Em andamento'),
-                  selected: filtro == StatusIncidente.emAndamento,
-                  onSelected: (_) {
-                    setState(() {
-                      filtro = StatusIncidente.emAndamento;
-                    });
-                  },
-                ),
-                ChoiceChip(
-                  label: const Text('Resolvidos'),
-                  selected: filtro == StatusIncidente.resolvido,
-                  onSelected: (_) {
-                    setState(() {
-                      filtro = StatusIncidente.resolvido;
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(12),
-              children: visiveis
-                  .map(
-                    (incidente) => GestureDetector(
-                      onTap: () async {
-                        final novoStatus = await Navigator.push(
-                          context,
-                          MaterialPageRoute<StatusIncidente>(
-                            builder: (context) =>
-                                DetalheIncidenteScreen(incidente: incidente),
-                          ),
-                        );
-                        if (novoStatus != null) {
-                          setState(() {
-                            incidente.status = novoStatus;
-                          });
-                        }
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Todos'),
+                      selected: filtro == null,
+                      onSelected: (_) {
+                        setState(() {
+                          filtro = null;
+                        });
                       },
-                      child: IncidenteCard(incidente: incidente),
                     ),
-                  )
-                  .toList(),
-            ),
-          ),
-        ],
+                    ChoiceChip(
+                      label: const Text('Em andamento'),
+                      selected: filtro == StatusIncidente.emAndamento,
+                      onSelected: (_) {
+                        setState(() {
+                          filtro = StatusIncidente.emAndamento;
+                        });
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('Resolvidos'),
+                      selected: filtro == StatusIncidente.resolvido,
+                      onSelected: (_) {
+                        setState(() {
+                          filtro = StatusIncidente.resolvido;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(12),
+                  children: visiveis
+                      .map(
+                        (incidente) => GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (context) => DetalheIncidenteScreen(
+                                  incidente: incidente,
+                                ),
+                              ),
+                            );
+                          },
+                          child: IncidenteCard(incidente: incidente),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
