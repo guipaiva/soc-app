@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 import '../widgets/incidente_card.dart';
@@ -86,6 +87,28 @@ final List<Incidente> incidentes = [
   ),
 ];
 
+final referenciaColecaoIncidentes =
+    FirebaseFirestore.instance.collection('incidentes');
+
+int calcularProximoNumeroDoIncidente(List<Incidente> listaDeTodosOsIncidentes) {
+  int maiorNumeroEncontrado = 1045;
+
+  for (int posicao = 0; posicao < listaDeTodosOsIncidentes.length; posicao++) {
+    String identificadorAtual = listaDeTodosOsIncidentes[posicao].id;
+
+    String parteNumericaDoIdentificador = identificadorAtual.substring(4);
+    int? numeroDoIdentificador = int.tryParse(parteNumericaDoIdentificador);
+
+    if (numeroDoIdentificador != null) {
+      if (numeroDoIdentificador > maiorNumeroEncontrado) {
+        maiorNumeroEncontrado = numeroDoIdentificador;
+      }
+    }
+  }
+
+  return maiorNumeroEncontrado + 1;
+}
+
 class ListaIncidentesScreen extends StatefulWidget {
   const ListaIncidentesScreen({super.key});
 
@@ -95,107 +118,170 @@ class ListaIncidentesScreen extends StatefulWidget {
 
 class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   StatusIncidente? filtro;
-  int proximoNumero = 1046;
 
-  Future<void> abrirNovoIncidente() async {
+  final streamDosIncidentes = referenciaColecaoIncidentes
+      .orderBy('abertoEm', descending: true)
+      .snapshots();
+
+  Future<void> gravarIncidentesDeExemplo() async {
+    for (int posicao = 0; posicao < incidentes.length; posicao++) {
+      Incidente incidenteDeExemplo = incidentes[posicao];
+      await referenciaColecaoIncidentes
+          .doc(incidenteDeExemplo.id)
+          .set(incidenteDeExemplo.toMap());
+    }
+  }
+
+  Future<void> abrirNovoIncidente(String proximoId) async {
     final novo = await Navigator.push(
       context,
       MaterialPageRoute<Incidente>(
         builder: (context) =>
-            NovoIncidenteScreen(proximoId: 'INC-$proximoNumero'),
+            NovoIncidenteScreen(proximoId: proximoId),
       ),
     );
+
     if (novo != null) {
-      setState(() {
-        incidentes.insert(0, novo);
-        proximoNumero++;
+      await referenciaColecaoIncidentes
+          .doc(novo.id)
+          .set(novo.toMap());
+    }
+  }
+
+  Future<void> abrirTelaDetalhe(Incidente incidenteSelecionado) async {
+    final novoStatus = await Navigator.push(
+      context,
+      MaterialPageRoute<StatusIncidente>(
+        builder: (context) =>
+            DetalheIncidenteScreen(incidente: incidenteSelecionado),
+      ),
+    );
+
+    if (novoStatus != null) {
+      await referenciaColecaoIncidentes.doc(incidenteSelecionado.id).update({
+        'status': novoStatus.name,
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final visiveis = incidentes
-        .where((incidente) => filtro == null || incidente.status == filtro)
-        .toList();
-
     return Scaffold(
       appBar: AppBar(title: const Text('Incidentes')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            child: Align(
-              alignment: Alignment.centerLeft,
+      body: StreamBuilder(
+        stream: streamDosIncidentes,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text('Erro ao carregar os incidentes'));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          List<Incidente> listaDeTodosOsIncidentes = [];
+          for (var documentoDoBanco in snapshot.data!.docs) {
+            Incidente incidenteConvertido = incidenteDoFirestore(
+              documentoDoBanco.id,
+              documentoDoBanco.data(),
+            );
+            listaDeTodosOsIncidentes.add(incidenteConvertido);
+          }
+
+          if (listaDeTodosOsIncidentes.isEmpty) {
+            return Center(
               child: ElevatedButton(
-                onPressed: abrirNovoIncidente,
-                child: const Text('Novo incidente'),
+                onPressed: gravarIncidentesDeExemplo,
+                child: const Text('Carregar exemplos'),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ChoiceChip(
-                  label: const Text('Todos'),
-                  selected: filtro == null,
-                  onSelected: (_) {
-                    setState(() {
-                      filtro = null;
-                    });
-                  },
+            );
+          }
+
+          List<Incidente> visiveis = [];
+          for (int posicao = 0;
+              posicao < listaDeTodosOsIncidentes.length;
+              posicao++) {
+            Incidente incidenteAtual = listaDeTodosOsIncidentes[posicao];
+            bool deveAparecerNaTela = filtro == null
+                ? true
+                : incidenteAtual.status == filtro;
+
+            if (deveAparecerNaTela) {
+              visiveis.add(incidenteAtual);
+            }
+          }
+
+          int numeroDoProximoIncidente =
+              calcularProximoNumeroDoIncidente(listaDeTodosOsIncidentes);
+          String proximoId = 'INC-$numeroDoProximoIncidente';
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      abrirNovoIncidente(proximoId);
+                    },
+                    child: const Text('Novo incidente'),
+                  ),
                 ),
-                ChoiceChip(
-                  label: const Text('Em andamento'),
-                  selected: filtro == StatusIncidente.emAndamento,
-                  onSelected: (_) {
-                    setState(() {
-                      filtro = StatusIncidente.emAndamento;
-                    });
-                  },
-                ),
-                ChoiceChip(
-                  label: const Text('Resolvidos'),
-                  selected: filtro == StatusIncidente.resolvido,
-                  onSelected: (_) {
-                    setState(() {
-                      filtro = StatusIncidente.resolvido;
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(12),
-              children: visiveis
-                  .map(
-                    (incidente) => GestureDetector(
-                      onTap: () async {
-                        final novoStatus = await Navigator.push(
-                          context,
-                          MaterialPageRoute<StatusIncidente>(
-                            builder: (context) =>
-                                DetalheIncidenteScreen(incidente: incidente),
-                          ),
-                        );
-                        if (novoStatus != null) {
-                          setState(() {
-                            incidente.status = novoStatus;
-                          });
-                        }
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Todos'),
+                      selected: filtro == null,
+                      onSelected: (_) {
+                        setState(() {
+                          filtro = null;
+                        });
                       },
-                      child: IncidenteCard(incidente: incidente),
                     ),
-                  )
-                  .toList(),
-            ),
-          ),
-        ],
+                    ChoiceChip(
+                      label: const Text('Em andamento'),
+                      selected: filtro == StatusIncidente.emAndamento,
+                      onSelected: (_) {
+                        setState(() {
+                          filtro = StatusIncidente.emAndamento;
+                        });
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('Resolvidos'),
+                      selected: filtro == StatusIncidente.resolvido,
+                      onSelected: (_) {
+                        setState(() {
+                          filtro = StatusIncidente.resolvido;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(12),
+                  children: visiveis
+                      .map(
+                        (incidente) => GestureDetector(
+                          onTap: () {
+                            abrirTelaDetalhe(incidente);
+                          },
+                          child: IncidenteCard(incidente: incidente),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
