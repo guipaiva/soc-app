@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
+import '../services/abuseipdb.dart';
 import '../widgets/incidente_card.dart';
 
 class DetalheIncidenteScreen extends StatefulWidget {
@@ -13,6 +14,95 @@ class DetalheIncidenteScreen extends StatefulWidget {
 
 class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
   StatusIncidente? escolhido;
+  Future<ReputacaoIp>? consulta;
+
+  @override
+  void initState() {
+    super.initState();
+    consultar();
+  }
+
+  void consultar() {
+    final ip = widget.incidente.ipRelacionado;
+    if (ip != null) {
+      consulta = consultarReputacao(ip);
+    }
+  }
+
+  Color corDoScore(int score) {
+    if (score >= 75) {
+      return Colors.red;
+    }
+    if (score >= 25) {
+      return Colors.orange;
+    }
+    return Colors.green;
+  }
+
+  Widget dadosDaReputacao(ReputacaoIp reputacao) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Score de abuso: ${reputacao.score}%',
+          style: TextStyle(
+            color: corDoScore(reputacao.score),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text('País: ${reputacao.pais ?? '—'}'),
+        Text('Provedor: ${reputacao.provedor ?? '—'}'),
+        Text('Denúncias: ${reputacao.denuncias}'),
+      ],
+    );
+  }
+
+  Widget secaoReputacao() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        const Text(
+          'Reputação do IP',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        FutureBuilder<ReputacaoIp>(
+          future: consulta,
+          builder: (context, snapshot) {
+            switch (snapshot.connectionState) {
+              case ConnectionState.none:
+                return const Text('Sem conexão com a consulta.');
+              case ConnectionState.waiting:
+              case ConnectionState.active:
+                return const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              case ConnectionState.done:
+                if (snapshot.hasError) {
+                  return Text(
+                    'Falha na consulta: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.red),
+                  );
+                }
+                return dadosDaReputacao(snapshot.data!);
+            }
+          },
+        ),
+        Center(
+          child: TextButton(
+            onPressed: () {
+              setState(() {
+                consultar();
+              });
+            },
+            child: const Text('Consultar de novo'),
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget campo(String rotulo, String valor) {
     return Padding(
@@ -72,6 +162,7 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
           ),
           const SizedBox(height: 4),
           Text(incidente.descricao),
+          if (incidente.ipRelacionado != null) secaoReputacao(),
           const SizedBox(height: 16),
           const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
