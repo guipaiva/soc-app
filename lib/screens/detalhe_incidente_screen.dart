@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 import '../widgets/incidente_card.dart';
@@ -27,6 +28,17 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> salvarAtualizacao (StatusIncidente status) async {
+    await FirebaseFirestore.instance
+      .collection('incidentes')
+      .doc(widget.incidente.id)
+      .update({"status": status.name});
+    
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -94,9 +106,7 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context, status);
-            },
+            onPressed: () => salvarAtualizacao(status),
             child: const Text('Salvar atualização'),
           ),
         ],
