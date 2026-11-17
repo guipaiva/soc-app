@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+
 import '../models/incidente.dart';
+import '../services/abuseipdb.dart';
 import '../widgets/incidente_card.dart';
+
+Color corDoScore(int score) {
+  if (score >= 75) return Colors.red;
+  if (score >= 25) return Colors.orange;
+  return Colors.green;
+}
 
 class DetalheIncidenteScreen extends StatefulWidget {
   final Incidente incidente;
@@ -13,8 +21,24 @@ class DetalheIncidenteScreen extends StatefulWidget {
 
 class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
   StatusIncidente? escolhido;
+  Future<ReputacaoIp>? reputacao;
 
-  Widget campo(String rotulo, String valor) {
+  @override
+  void initState() {
+    super.initState();
+    final ip = widget.incidente.ipRelacionado;
+    if (ip != null) {
+      reputacao = consultarReputacao(ip);
+    }
+  }
+
+  void consultarDeNovo() {
+    setState(() {
+      reputacao = consultarReputacao(widget.incidente.ipRelacionado!);
+    });
+  }
+
+  Widget campo(String rotulo, String valor, {Color? cor}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -23,9 +47,36 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
             width: 120,
             child: Text(rotulo, style: TextStyle(color: Colors.grey.shade700)),
           ),
-          Text(valor, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            valor,
+            style: TextStyle(fontWeight: FontWeight.bold, color: cor),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget secaoReputacao() {
+    return FutureBuilder<ReputacaoIp>(
+      future: reputacao,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          final erro = snapshot.error;
+          return Text(erro is String ? erro : 'Sem conexão.');
+        }
+        final r = snapshot.data!;
+        return Column(
+          children: [
+            campo('Score de abuso', '${r.score}%', cor: corDoScore(r.score)),
+            campo('País', r.pais ?? '—'),
+            campo('Provedor', r.provedor ?? '—'),
+            campo('Denúncias', '${r.denuncias}'),
+          ],
+        );
+      },
     );
   }
 
@@ -72,6 +123,19 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
           ),
           const SizedBox(height: 4),
           Text(incidente.descricao),
+          if (incidente.ipRelacionado != null) ...[
+            const SizedBox(height: 16),
+            const Text(
+              'Reputação do IP',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            secaoReputacao(),
+            TextButton(
+              onPressed: consultarDeNovo,
+              child: const Text('Consultar de novo'),
+            ),
+          ],
           const SizedBox(height: 16),
           const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
