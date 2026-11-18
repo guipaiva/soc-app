@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
+import '../services/reputacao.dart';
 import '../widgets/incidente_card.dart';
 
 class DetalheIncidenteScreen extends StatefulWidget {
@@ -13,6 +14,66 @@ class DetalheIncidenteScreen extends StatefulWidget {
 
 class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
   StatusIncidente? escolhido;
+  Future<Map<String, dynamic>>? reputacao;
+
+  @override
+  void initState() {
+    super.initState();
+    final ip = widget.incidente.ipRelacionado;
+    if (ip != null) {
+      reputacao = consultarReputacao(ip);
+    }
+  }
+
+  void consultarDeNovo() {
+    setState(() {
+      reputacao = consultarReputacao(widget.incidente.ipRelacionado!);
+    });
+  }
+
+  Color corDoScore(int score) {
+    if (score >= 75) {
+      return Colors.red.shade700;
+    }
+    if (score >= 25) {
+      return Colors.orange.shade800;
+    }
+    return Colors.green.shade700;
+  }
+
+  Widget secaoReputacao() {
+    return FutureBuilder(
+      future: reputacao,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Text('Sem conexão com a AbuseIPDB');
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final dados = snapshot.data!;
+        if (dados['erro'] != null) {
+          return Text('Consulta falhou: ${dados['erro']}');
+        }
+        final int score = dados['abuseConfidenceScore'];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Score de abuso: $score%',
+              style: TextStyle(
+                color: corDoScore(score),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text('País: ${dados['countryCode'] ?? '—'}'),
+            Text('Provedor: ${dados['isp'] ?? '—'}'),
+            Text('Denúncias: ${dados['totalReports']}'),
+          ],
+        );
+      },
+    );
+  }
 
   Widget campo(String rotulo, String valor) {
     return Padding(
@@ -72,6 +133,19 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
           ),
           const SizedBox(height: 4),
           Text(incidente.descricao),
+          if (incidente.ipRelacionado != null) ...[
+            const SizedBox(height: 16),
+            const Text(
+              'Reputação do IP',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            secaoReputacao(),
+            TextButton(
+              onPressed: consultarDeNovo,
+              child: const Text('Consultar de novo'),
+            ),
+          ],
           const SizedBox(height: 16),
           const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
