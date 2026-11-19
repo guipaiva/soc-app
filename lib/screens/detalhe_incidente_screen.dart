@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 import '../widgets/incidente_card.dart';
+import '../widgets/reputacao_ip_secao.dart';
 
 class DetalheIncidenteScreen extends StatefulWidget {
   final Incidente incidente;
@@ -34,6 +35,7 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
     final incidente = widget.incidente;
     final status = escolhido ?? incidente.status;
     final corSeveridade = corDaSeveridade(incidente.severidade);
+    final ip = incidente.ipRelacionado;
 
     return Scaffold(
       appBar: AppBar(title: Text('#${incidente.id}')),
@@ -72,6 +74,10 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
           ),
           const SizedBox(height: 4),
           Text(incidente.descricao),
+          if (ip != null && ip.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            ReputacaoIpSecao(ip: ip),
+          ],
           const SizedBox(height: 16),
           const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
