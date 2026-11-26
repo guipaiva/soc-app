@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 import '../services/reputacao.dart';
@@ -5,8 +6,15 @@ import '../widgets/incidente_card.dart';
 
 class DetalheIncidenteScreen extends StatefulWidget {
   final Incidente incidente;
+  final bool podeMudarStatus;
+  final bool podeExcluir;
 
-  const DetalheIncidenteScreen({super.key, required this.incidente});
+  const DetalheIncidenteScreen({
+    super.key,
+    required this.incidente,
+    required this.podeMudarStatus,
+    required this.podeExcluir,
+  });
 
   @override
   State<DetalheIncidenteScreen> createState() => _DetalheIncidenteScreenState();
@@ -29,6 +37,16 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
     setState(() {
       reputacao = consultarReputacao(widget.incidente.ipRelacionado!);
     });
+  }
+
+  Future<void> excluir() async {
+    await FirebaseFirestore.instance
+        .collection('incidentes')
+        .doc(widget.incidente.id)
+        .delete();
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   Color corDoScore(int score) {
@@ -147,32 +165,42 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
             ),
           ],
           const SizedBox(height: 16),
-          const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: StatusIncidente.values
-                .map(
-                  (opcao) => ChoiceChip(
-                    label: Text(opcao.texto),
-                    selected: opcao == status,
-                    onSelected: (_) {
-                      setState(() {
-                        escolhido = opcao;
-                      });
-                    },
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context, status);
-            },
-            child: const Text('Salvar atualização'),
-          ),
+          if (widget.podeMudarStatus) ...[
+            const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: StatusIncidente.values
+                  .map(
+                    (opcao) => ChoiceChip(
+                      label: Text(opcao.texto),
+                      selected: opcao == status,
+                      onSelected: (_) {
+                        setState(() {
+                          escolhido = opcao;
+                        });
+                      },
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, status);
+              },
+              child: const Text('Salvar atualização'),
+            ),
+          ],
+          if (widget.podeExcluir) ...[
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: excluir,
+              style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Excluir incidente'),
+            ),
+          ],
         ],
       ),
     );
