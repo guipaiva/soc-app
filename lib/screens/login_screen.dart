@@ -9,6 +9,8 @@ String mensagemDeErro(String codigo) {
       return 'E-mail ou senha incorretos.';
     case 'invalid-email':
       return 'E-mail em formato inválido.';
+    case 'missing-password':
+      return 'Informe a senha.';
     case 'too-many-requests':
       return 'Muitas tentativas. Tente de novo mais tarde.';
     case 'network-request-failed':

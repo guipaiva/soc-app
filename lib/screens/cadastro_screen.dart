@@ -5,6 +5,8 @@ String mensagemDeErroCadastro(String codigo) {
   switch (codigo) {
     case 'invalid-email':
       return 'E-mail em formato inválido.';
+    case 'missing-password':
+      return 'Informe a senha.';
     case 'email-already-in-use':
       return 'Já existe uma conta com este e-mail.';
     case 'weak-password':
