@@ -1,6 +1,21 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+String mensagemDeErroCadastro(String codigo) {
+  switch (codigo) {
+    case 'invalid-email':
+      return 'E-mail em formato inválido.';
+    case 'email-already-in-use':
+      return 'Já existe uma conta com este e-mail.';
+    case 'weak-password':
+      return 'Senha fraca. Use pelo menos 6 caracteres.';
+    case 'network-request-failed':
+      return 'Sem conexão com a internet.';
+    default:
+      return codigo;
+  }
+}
+
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({super.key});
 
@@ -36,7 +51,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
-        erro = e.code;
+        erro = mensagemDeErroCadastro(e.code);
       });
     } finally {
       setState(() {
