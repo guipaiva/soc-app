@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 import '../widgets/incidente_card.dart';
@@ -187,11 +188,22 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      abrirNovoIncidente(proximoId(todos));
-                    },
-                    child: const Text('Novo incidente'),
+                  child: Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          abrirNovoIncidente(proximoId(todos));
+                        },
+                        child: const Text('Novo incidente'),
+                      ),
+
+                      ElevatedButton(
+                        onPressed: () async {
+                          await FirebaseAuth.instance.signOut();
+                        },
+                        child: const Text('Sair'),
+                      ),
+                    ],
                   ),
                 ),
               ),
