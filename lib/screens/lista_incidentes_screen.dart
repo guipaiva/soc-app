@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
+import '../models/papel.dart';
+import '../services/auth_servico.dart';
 import '../widgets/incidente_card.dart';
 import 'detalhe_incidente_screen.dart';
 import 'novo_incidente_screen.dart';
@@ -88,7 +90,9 @@ final List<Incidente> exemplos = [
 ];
 
 class ListaIncidentesScreen extends StatefulWidget {
-  const ListaIncidentesScreen({super.key});
+  final Papel papel;
+
+  const ListaIncidentesScreen({super.key, required this.papel});
 
   @override
   State<ListaIncidentesScreen> createState() => _ListaIncidentesScreenState();
@@ -128,14 +132,19 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   }
 
   Future<void> abrirDetalhe(Incidente incidente) async {
-    final novoStatus = await Navigator.push(
+    final resultado = await Navigator.push(
       context,
-      MaterialPageRoute<StatusIncidente>(
-        builder: (context) => DetalheIncidenteScreen(incidente: incidente),
+      MaterialPageRoute<Object>(
+        builder: (context) => DetalheIncidenteScreen(
+          incidente: incidente,
+          papel: widget.papel,
+        ),
       ),
     );
-    if (novoStatus != null) {
-      await colecao.doc(incidente.id).update({'status': novoStatus.name});
+    if (resultado is StatusIncidente) {
+      await colecao.doc(incidente.id).update({'status': resultado.name});
+    } else if (resultado is ExcluirIncidente) {
+      await colecao.doc(incidente.id).delete();
     }
   }
 
@@ -154,7 +163,22 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Incidentes')),
+      appBar: AppBar(
+        title: const Text('Incidentes'),
+        actions: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(widget.papel.texto),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Sair',
+            icon: const Icon(Icons.logout),
+            onPressed: sair,
+          ),
+        ],
+      ),
       body: StreamBuilder(
         stream: colecao.orderBy('abertoEm', descending: true).snapshots(),
         builder: (context, snapshot) {
@@ -167,6 +191,9 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
           final todos = snapshot.data!.docs
               .map((doc) => incidenteDoFirestore(doc.id, doc.data()))
               .toList();
+          if (todos.isEmpty && !widget.papel.podeCriar) {
+            return const Center(child: Text('Nenhum incidente cadastrado.'));
+          }
           if (todos.isEmpty) {
             return Center(
               child: ElevatedButton(
@@ -183,18 +210,19 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
 
           return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      abrirNovoIncidente(proximoId(todos));
-                    },
-                    child: const Text('Novo incidente'),
+              if (widget.papel.podeCriar)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        abrirNovoIncidente(proximoId(todos));
+                      },
+                      child: const Text('Novo incidente'),
+                    ),
                   ),
                 ),
-              ),
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: Wrap(

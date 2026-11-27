@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Papel de quem fez o pedido, lido em usuarios/<uid>. Se o documento não
+    // existir, o get() falha e o pedido é recusado.
+    function papel() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.papel;
+    }
+
+    // Cada um lê só o próprio documento; ninguém grava (os papéis são
+    // definidos pelo console do Firebase).
+    match /usuarios/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /incidentes/{incidente} {
+      allow read: if request.auth != null
+        && papel() in ['analista', 'operador', 'administrador'];
+
+      allow create: if request.auth != null
+        && papel() in ['operador', 'administrador'];
+
+      allow update: if request.auth != null
+        && papel() in ['analista', 'administrador'];
+
+      allow delete: if request.auth != null
+        && papel() == 'administrador';
+    }
+  }
+}
