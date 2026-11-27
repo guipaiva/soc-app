@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
+import '../models/papel.dart';
 import '../services/reputacao.dart';
 import '../widgets/incidente_card.dart';
 
+/// Resultado devolvido por esta tela quando o administrador exclui o incidente.
+/// Ao salvar o status, a tela devolve o próprio [StatusIncidente].
+class ExcluirIncidente {
+  const ExcluirIncidente();
+}
+
 class DetalheIncidenteScreen extends StatefulWidget {
   final Incidente incidente;
+  final Papel papel;
 
-  const DetalheIncidenteScreen({super.key, required this.incidente});
+  const DetalheIncidenteScreen({
+    super.key,
+    required this.incidente,
+    required this.papel,
+  });
 
   @override
   State<DetalheIncidenteScreen> createState() => _DetalheIncidenteScreenState();
@@ -90,9 +102,39 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
     );
   }
 
+  Future<void> confirmarExclusao() async {
+    final confirmou = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir incidente'),
+        content: Text(
+          'Excluir #${widget.incidente.id}? Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context, false);
+            },
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmou == true && mounted) {
+      Navigator.pop(context, const ExcluirIncidente());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final incidente = widget.incidente;
+    final papel = widget.papel;
     final status = escolhido ?? incidente.status;
     final corSeveridade = corDaSeveridade(incidente.severidade);
 
@@ -147,32 +189,46 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
             ),
           ],
           const SizedBox(height: 16),
-          const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: StatusIncidente.values
-                .map(
-                  (opcao) => ChoiceChip(
-                    label: Text(opcao.texto),
-                    selected: opcao == status,
-                    onSelected: (_) {
-                      setState(() {
-                        escolhido = opcao;
-                      });
-                    },
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context, status);
-            },
-            child: const Text('Salvar atualização'),
-          ),
+          if (papel.podeMudarStatus) ...[
+            const Text(
+              'Status',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: StatusIncidente.values
+                  .map(
+                    (opcao) => ChoiceChip(
+                      label: Text(opcao.texto),
+                      selected: opcao == status,
+                      onSelected: (_) {
+                        setState(() {
+                          escolhido = opcao;
+                        });
+                      },
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, status);
+              },
+              child: const Text('Salvar atualização'),
+            ),
+          ] else
+            campo('Status', incidente.status.texto),
+          if (papel.podeExcluir) ...[
+            const SizedBox(height: 8),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+              onPressed: confirmarExclusao,
+              child: const Text('Excluir incidente'),
+            ),
+          ],
         ],
       ),
     );
