@@ -1,90 +1,169 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
 import '../models/incidente.dart';
-import '../services/reputacao.dart';
-import '../widgets/incidente_card.dart';
 
 class DetalheIncidenteScreen extends StatefulWidget {
   final Incidente incidente;
+  final String papel;
 
-  const DetalheIncidenteScreen({super.key, required this.incidente});
+  const DetalheIncidenteScreen({
+    super.key,
+    required this.incidente,
+    required this.papel,
+  });
 
   @override
-  State<DetalheIncidenteScreen> createState() => _DetalheIncidenteScreenState();
+  State<DetalheIncidenteScreen> createState() =>
+      _DetalheIncidenteScreenState();
 }
 
-class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
-  StatusIncidente? escolhido;
-  Future<Map<String, dynamic>>? reputacao;
+class _DetalheIncidenteScreenState
+    extends State<DetalheIncidenteScreen> {
+  bool carregando = false;
 
-  @override
-  void initState() {
-    super.initState();
-    final ip = widget.incidente.ipRelacionado;
-    if (ip != null) {
-      reputacao = consultarReputacao(ip);
+  bool get podeAlterarStatus =>
+      widget.papel == 'analista' || widget.papel == 'admin';
+
+  bool get podeExcluir => widget.papel == 'admin';
+
+  String textoSeveridade(Severidade severidade) {
+    switch (severidade) {
+      case Severidade.critico:
+        return 'Crítico';
+      case Severidade.alto:
+        return 'Alto';
+      case Severidade.medio:
+        return 'Médio';
+      case Severidade.baixo:
+        return 'Baixo';
     }
   }
 
-  void consultarDeNovo() {
+  Future<void> alterarStatus() async {
+    final proximo = widget.incidente.status.proximo;
+
     setState(() {
-      reputacao = consultarReputacao(widget.incidente.ipRelacionado!);
+      carregando = true;
     });
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('incidentes')
+          .doc(widget.incidente.id)
+          .update({
+        'status': proximo.name,
+      });
+
+      if (!mounted) return;
+
+      setState(() {
+        widget.incidente.status = proximo;
+        carregando = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Status alterado para ${proximo.texto}.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        carregando = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao alterar status: $e'),
+        ),
+      );
+    }
   }
 
-  Color corDoScore(int score) {
-    if (score >= 75) {
-      return Colors.red.shade700;
-    }
-    if (score >= 25) {
-      return Colors.orange.shade800;
-    }
-    return Colors.green.shade700;
-  }
-
-  Widget secaoReputacao() {
-    return FutureBuilder(
-      future: reputacao,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const Text('Sem conexão com a AbuseIPDB');
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final dados = snapshot.data!;
-        if (dados['erro'] != null) {
-          return Text('Consulta falhou: ${dados['erro']}');
-        }
-        final int score = dados['abuseConfidenceScore'];
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Score de abuso: $score%',
-              style: TextStyle(
-                color: corDoScore(score),
-                fontWeight: FontWeight.bold,
-              ),
+  Future<void> excluirIncidente() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Excluir incidente'),
+          content: const Text(
+            'Tem certeza que deseja excluir este incidente? '
+            'Esta ação não poderá ser desfeita.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
             ),
-            Text('País: ${dados['countryCode'] ?? '—'}'),
-            Text('Provedor: ${dados['isp'] ?? '—'}'),
-            Text('Denúncias: ${dados['totalReports']}'),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Excluir'),
+            ),
           ],
         );
       },
     );
+
+    if (confirmar != true) return;
+
+    setState(() {
+      carregando = true;
+    });
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('incidentes')
+          .doc(widget.incidente.id)
+          .delete();
+
+      if (!mounted) return;
+
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Incidente excluído.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        carregando = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao excluir incidente: $e'),
+        ),
+      );
+    }
   }
 
-  Widget campo(String rotulo, String valor) {
+  Widget campo(String titulo, String valor) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(rotulo, style: TextStyle(color: Colors.grey.shade700)),
+          Text(
+            titulo,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
           ),
-          Text(valor, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(
+            valor.isEmpty ? 'Não informado' : valor,
+            style: const TextStyle(fontSize: 16),
+          ),
         ],
       ),
     );
@@ -93,88 +172,86 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
   @override
   Widget build(BuildContext context) {
     final incidente = widget.incidente;
-    final status = escolhido ?? incidente.status;
-    final corSeveridade = corDaSeveridade(incidente.severidade);
 
     return Scaffold(
-      appBar: AppBar(title: Text('#${incidente.id}')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Row(
-            children: [
-              Chip(
-                label: Text(
-                  textoDaSeveridade(incidente.severidade),
-                  style: TextStyle(
-                    color: corSeveridade,
+      appBar: AppBar(
+        title: Text('Detalhe ${incidente.id}'),
+      ),
+      body: carregando
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text(
+                  incidente.titulo,
+                  style: const TextStyle(
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                backgroundColor: corSeveridade.withValues(alpha: 0.14),
-                side: BorderSide(color: corSeveridade),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            incidente.titulo,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          campo('Tipo', incidente.tipo),
-          campo('Aberto', incidente.abertoHa),
-          campo('Responsável', incidente.responsavel ?? 'Sem responsável'),
-          campo('IP relacionado', incidente.ipRelacionado ?? '—'),
-          const SizedBox(height: 16),
-          const Text(
-            'Descrição',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(incidente.descricao),
-          if (incidente.ipRelacionado != null) ...[
-            const SizedBox(height: 16),
-            const Text(
-              'Reputação do IP',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            secaoReputacao(),
-            TextButton(
-              onPressed: consultarDeNovo,
-              child: const Text('Consultar de novo'),
-            ),
-          ],
-          const SizedBox(height: 16),
-          const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: StatusIncidente.values
-                .map(
-                  (opcao) => ChoiceChip(
-                    label: Text(opcao.texto),
-                    selected: opcao == status,
-                    onSelected: (_) {
-                      setState(() {
-                        escolhido = opcao;
-                      });
-                    },
+
+                const SizedBox(height: 16),
+
+                campo('Identificador', incidente.id),
+                campo('Tipo', incidente.tipo),
+                campo(
+                  'Severidade',
+                  textoSeveridade(incidente.severidade),
+                ),
+                campo('Status', incidente.status.texto),
+                campo('Responsável', incidente.responsavel ?? ''),
+                campo('IP relacionado', incidente.ipRelacionado ?? ''),
+                campo(
+                  'Data de abertura',
+                  incidente.abertoEm.toString(),
+                ),
+                campo('Descrição', incidente.descricao),
+
+                const SizedBox(height: 24),
+
+                if (podeAlterarStatus)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: alterarStatus,
+                      icon: const Icon(Icons.sync),
+                      label: Text(
+                        'Avançar status (${incidente.status.texto})',
+                      ),
+                    ),
                   ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context, status);
-            },
-            child: const Text('Salvar atualização'),
-          ),
-        ],
-      ),
+
+                const SizedBox(height: 8),
+
+                if (podeExcluir)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: excluirIncidente,
+                      icon: const Icon(Icons.delete),
+                      label: const Text('Excluir incidente'),
+                    ),
+                  ),
+
+                if (!podeAlterarStatus && !podeExcluir)
+                  const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text(
+                        'Você possui permissão somente para visualizar '
+                        'este incidente.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
     );
   }
 }
