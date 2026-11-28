@@ -1,0 +1,130 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Verifica o papel do usuário autenticado
+    function papel() {
+      return get(
+        /databases/$(database)/documents/usuarios/$(request.auth.uid)
+      ).data.papel;
+    }
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function papelValido() {
+      return autenticado() &&
+        papel() in ['analista', 'operador', 'admin'];
+    }
+
+    function analistaOuAdmin() {
+      return papelValido() &&
+        papel() in ['analista', 'admin'];
+    }
+
+    function operadorOuAdmin() {
+      return papelValido() &&
+        papel() in ['operador', 'admin'];
+    }
+
+    function admin() {
+      return papelValido() &&
+        papel() == 'admin';
+    }
+
+    // Regras dos incidentes
+    match /incidentes/{incidenteId} {
+
+      // Analista, operador e admin podem ler
+      allow read: if papelValido();
+
+      // Operador e admin podem criar
+      allow create: if operadorOuAdmin()
+        && request.resource.data.keys().hasOnly([
+          'titulo',
+          'tipo',
+          'severidade',
+          'status',
+          'abertoEm',
+          'responsavel',
+          'descricao',
+          'ipRelacionado'
+        ])
+        && request.resource.data.keys().hasAll([
+          'titulo',
+          'tipo',
+          'severidade',
+          'status',
+          'abertoEm',
+          'descricao'
+        ])
+        && request.resource.data.titulo is string
+        && request.resource.data.tipo is string
+        && request.resource.data.severidade in [
+          'critico',
+          'alto',
+          'medio',
+          'baixo'
+        ]
+        && request.resource.data.status in [
+          'aberto',
+          'emAndamento',
+          'resolvido'
+        ]
+        && request.resource.data.abertoEm is timestamp
+        && request.resource.data.descricao is string;
+
+      // Analista e admin podem alterar somente o status
+      allow update: if analistaOuAdmin()
+        && request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in [
+          'aberto',
+          'emAndamento',
+          'resolvido'
+        ];
+
+      // Exclusão somente pelo administrador
+      allow delete: if admin();
+    }
+
+    // Regras da coleção de usuários
+    match /usuarios/{uid} {
+
+      // Cada usuário pode ler somente o próprio documento
+      allow read: if autenticado()
+        && request.auth.uid == uid;
+
+      // O aplicativo não pode gravar papéis
+      allow write: if false;
+    }
+
+    // Contador usado para gerar IDs de incidentes
+    match /controle/{documentoId} {
+
+      // Operador e admin podem consultar o contador
+      allow read: if operadorOuAdmin()
+        && documentoId == 'incidentes';
+
+      // Criação inicial do contador
+      allow create: if operadorOuAdmin()
+        && documentoId == 'incidentes'
+        && request.resource.data.keys().hasOnly(['ultimoNumero'])
+        && request.resource.data.ultimoNumero is int
+        && request.resource.data.ultimoNumero >= 1046;
+
+      // Atualização do contador
+      allow update: if operadorOuAdmin()
+        && documentoId == 'incidentes'
+        && request.resource.data.keys().hasOnly(['ultimoNumero'])
+        && request.resource.data.ultimoNumero is int
+        && request.resource.data.ultimoNumero >
+          resource.data.ultimoNumero;
+
+      // Não permite excluir o contador
+      allow delete: if false;
+    }
+  }
+}
