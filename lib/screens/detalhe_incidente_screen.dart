@@ -5,8 +5,13 @@ import '../widgets/incidente_card.dart';
 
 class DetalheIncidenteScreen extends StatefulWidget {
   final Incidente incidente;
+  final String papel;
 
-  const DetalheIncidenteScreen({super.key, required this.incidente});
+  const DetalheIncidenteScreen({
+    super.key,
+    required this.incidente,
+    required this.papel,
+  });
 
   @override
   State<DetalheIncidenteScreen> createState() => _DetalheIncidenteScreenState();
@@ -14,7 +19,12 @@ class DetalheIncidenteScreen extends StatefulWidget {
 
 class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
   StatusIncidente? escolhido;
-  Future<Map<String, dynamic>>? reputacao;
+  Future? reputacao;
+
+  bool get podeMudarStatus =>
+      widget.papel == 'analista' || widget.papel == 'admin';
+
+  bool get podeExcluir => widget.papel == 'admin';
 
   @override
   void initState() {
@@ -149,30 +159,46 @@ class _DetalheIncidenteScreenState extends State<DetalheIncidenteScreen> {
           const SizedBox(height: 16),
           const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: StatusIncidente.values
-                .map(
-                  (opcao) => ChoiceChip(
-                    label: Text(opcao.texto),
-                    selected: opcao == status,
-                    onSelected: (_) {
-                      setState(() {
-                        escolhido = opcao;
-                      });
-                    },
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context, status);
-            },
-            child: const Text('Salvar atualização'),
-          ),
+          if (podeMudarStatus) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: StatusIncidente.values
+                  .map(
+                    (opcao) => ChoiceChip(
+                      label: Text(opcao.texto),
+                      selected: opcao == status,
+                      onSelected: (_) {
+                        setState(() {
+                          escolhido = opcao;
+                        });
+                      },
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, status);
+              },
+              child: const Text('Salvar atualização'),
+            ),
+          ] else
+            Text(incidente.status.texto),
+          if (podeExcluir) ...[
+            const SizedBox(height: 12),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.pop(context, 'excluir');
+              },
+              child: const Text('Excluir incidente'),
+            ),
+          ],
         ],
       ),
     );

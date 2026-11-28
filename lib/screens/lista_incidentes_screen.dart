@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/incidente.dart';
 import '../widgets/incidente_card.dart';
@@ -88,7 +89,9 @@ final List<Incidente> exemplos = [
 ];
 
 class ListaIncidentesScreen extends StatefulWidget {
-  const ListaIncidentesScreen({super.key});
+  final String papel;
+
+  const ListaIncidentesScreen({super.key, required this.papel});
 
   @override
   State<ListaIncidentesScreen> createState() => _ListaIncidentesScreenState();
@@ -97,6 +100,8 @@ class ListaIncidentesScreen extends StatefulWidget {
 class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   final colecao = FirebaseFirestore.instance.collection('incidentes');
   StatusIncidente? filtro;
+
+  bool get podeCriar => widget.papel == 'operador' || widget.papel == 'admin';
 
   Future<void> carregarExemplos() async {
     for (final exemplo in exemplos) {
@@ -128,14 +133,19 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   }
 
   Future<void> abrirDetalhe(Incidente incidente) async {
-    final novoStatus = await Navigator.push(
+    final resultado = await Navigator.push(
       context,
-      MaterialPageRoute<StatusIncidente>(
-        builder: (context) => DetalheIncidenteScreen(incidente: incidente),
+      MaterialPageRoute<dynamic>(
+        builder: (context) => DetalheIncidenteScreen(
+          incidente: incidente,
+          papel: widget.papel,
+        ),
       ),
     );
-    if (novoStatus != null) {
-      await colecao.doc(incidente.id).update({'status': novoStatus.name});
+    if (resultado == 'excluir') {
+      await colecao.doc(incidente.id).delete();
+    } else if (resultado is StatusIncidente) {
+      await colecao.doc(incidente.id).update({'status': resultado.name});
     }
   }
 
@@ -154,7 +164,16 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Incidentes')),
+      appBar: AppBar(
+        title: Text('Incidentes · ${widget.papel}'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => FirebaseAuth.instance.signOut(),
+            icon: const Icon(Icons.logout, color: Colors.white),
+            label: const Text('Sair', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
       body: StreamBuilder(
         stream: colecao.orderBy('abertoEm', descending: true).snapshots(),
         builder: (context, snapshot) {
@@ -168,6 +187,9 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
               .map((doc) => incidenteDoFirestore(doc.id, doc.data()))
               .toList();
           if (todos.isEmpty) {
+            if (!podeCriar) {
+              return const Center(child: Text('Nenhum incidente cadastrado.'));
+            }
             return Center(
               child: ElevatedButton(
                 onPressed: carregarExemplos,
@@ -183,18 +205,19 @@ class _ListaIncidentesScreenState extends State<ListaIncidentesScreen> {
 
           return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      abrirNovoIncidente(proximoId(todos));
-                    },
-                    child: const Text('Novo incidente'),
+              if (podeCriar)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        abrirNovoIncidente(proximoId(todos));
+                      },
+                      child: const Text('Novo incidente'),
+                    ),
                   ),
                 ),
-              ),
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: Wrap(
