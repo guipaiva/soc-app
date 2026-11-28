@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function papel() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.papel;
+    }
+
+    function estaLogado() {
+      return request.auth != null;
+    }
+
+    match /usuarios/{uid} {
+      allow read: if estaLogado() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /incidentes/{incidenteId} {
+      allow read: if estaLogado() && papel() in ['analista', 'operador', 'admin'];
+      allow create: if estaLogado() && papel() in ['operador', 'admin'];
+      allow update: if estaLogado() && papel() in ['analista', 'admin'];
+      allow delete: if estaLogado() && papel() == 'admin';
+    }
+  }
+}
